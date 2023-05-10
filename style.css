@@ -1,0 +1,124 @@
+	body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background-color: #F5F5F5;
+}
+
+#messagesDiv {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px auto;
+  width: 80%;
+  height: 400px;
+  overflow-y: scroll;
+}
+
+#messageForm {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+  width: 80%;
+}
+
+#nameInput,
+#messageInput {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 20px;
+  border: none;
+  margin-right: 10px;
+  width: 60%;
+}
+
+#nameInput::placeholder,
+#messageInput::placeholder {
+  color: #B2B2B2;
+}
+
+#nameInput:focus,
+#messageInput:focus {
+  outline: none;
+}
+
+input[type=submit] {
+  background-color: #00C300;
+  color: #FFFFFF;
+  border-radius: 20px;
+  border: none;
+  font-size: 16px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #00A300;
+}
+
+input[type=button] {
+  background-color: #00C300;
+  color: #FFFFFF;
+  border-radius: 20px;
+  border: none;
+  font-size: 16px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+input[type=button]:hover {
+  background-color: #00A300;
+}
+
+.check {
+  background-color: #00C300;
+  color: #FFFFFF;
+  border-radius: 20px;
+  border: none;
+  font-size: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  width: 80px;
+}
+
+.check:hover {
+  background-color: #00A300;
+}
+
+.message {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  max-width: 80%;
+}
+
+.message span {
+  font-weight: bold;
+}
+
+@media only screen and (max-width: 600px) {
+  #messagesDiv {
+    width: 86%;
+  }
+  
+  #messageForm {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  #nameInput,
+  #messageInput {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+button{
+  border: none;
+  color: rgba(0, 225, 255, 0.694);
+  background: none;
+}
+button:hover{
+  border: none;
+  color: rgba(111, 0, 255, 0.694);
+  background: none;
+}
