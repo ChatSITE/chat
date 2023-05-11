@@ -4,21 +4,168 @@
 	<meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>チャット</title>
-<link rel="stylesheet" href="style.css">
+<style>
+
+.message {
+  max-width: 50%;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.message.from-me {
+  background-color: #DCF8C6;
+  align-self: flex-end;
+}
+
+.message.from-others {
+  background-color: #FFFFFF;
+  align-self: flex-start;
+}
+
+
+	body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background-color: #F5F5F5;
+}
+
+#messagesDiv {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px auto;
+  width: 80%;
+  height: 400px;
+  overflow-y: scroll;
+}
+
+#messageForm {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+  width: 80%;
+}
+
+#nameInput,
+#messageInput {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 20px;
+  border: none;
+  margin-right: 10px;
+  width: 60%;
+}
+
+#nameInput::placeholder,
+#messageInput::placeholder {
+  color: #B2B2B2;
+}
+
+#nameInput:focus,
+#messageInput:focus {
+  outline: none;
+}
+
+input[type=submit] {
+  background-color: #00C300;
+  color: #FFFFFF;
+  border-radius: 20px;
+  border: none;
+  font-size: 16px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #00A300;
+}
+
+input[type=button] {
+  background-color: #00C300;
+  color: #FFFFFF;
+  border-radius: 20px;
+  border: none;
+  font-size: 16px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+input[type=button]:hover {
+  background-color: #00A300;
+}
+
+#submitPassword{
+  background-color: #00C300;
+  color: #FFFFFF;
+  border-radius: 20px;
+  border: none;
+  font-size: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  width: 25px;
+}
+
+#submitPassword:hover {
+  background-color: #00A300;
+}
+
+.message {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  max-width: 80%;
+}
+
+.message span {
+  font-weight: bold;
+}
+
+@media only screen and (max-width: 600px) {
+  #messagesDiv {
+    width: 86%;
+  }
+  
+  #messageForm {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  #nameInput,
+  #messageInput {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+button{
+  border: none;
+  color: rgba(0, 225, 255, 0.694);
+  background: none;
+ 
+}
+
+</style>
 </head>
 <body>
 	<div id="authDiv">
+		
 		<h2>パスワードを入力してください</h2>
 		<input type="text" id="passwordInput" style="font-size: 16px;"	>
-		<button class="check" id="submitPassword">認証する</button>
+		<input class="check" id="submitPassword" value="認証する">
 	</div>
-	<div id="messagesDiv"></div>
+	<!-- メッセージ表示用のdiv -->
+<div id="messagesDiv" style="display: none;">
+	<!-- メッセージ一覧 -->
+  </div>
 	<form id="messageForm">
 		<input type="text" id="nameInput" placeholder="名前(後から変更できません)">
 		<input type="text" id="messageInput" placeholder="メッセージ">
 		<input type="submit" value="送信">
 		<input type="button" value="退室する" onclick="window.location.reload();">
 		<input type="button" value="更新する" id="updateButton">
+	
 	
 		
 	</form>
@@ -78,15 +225,19 @@ var database = firebase.database();
 
 // メッセージを読み込んで表示する
 database.ref("messages2").on("child_added", function(snapshot) {
-	var message = snapshot.val();
-	var name = message.name;
-	var text = message.text;
-	var time = new Date(message.time);
-	var messageElement = document.createElement("div");
-	messageElement.innerText = name + ": " + text + " (" + time.toLocaleTimeString() + ")";
-	document.getElementById("messagesDiv").appendChild(messageElement);
-});
-	 // 削除ボタンを追加する
+  var message = snapshot.val();
+  var name = message.name;
+  var text = message.text;
+  var messageElement = document.createElement("div");
+  messageElement.innerText = name + ": " + text;
+  messageElement.classList.add("message");
+  if (name === localStorage.getItem("name")) {
+    messageElement.classList.add("from-me");
+  } else {
+    messageElement.classList.add("from-others");
+  }
+
+  // 削除ボタンを追加する
   var deleteButton = document.createElement("button");
   deleteButton.innerText = "削除";
   deleteButton.addEventListener("click", function() {
@@ -97,6 +248,7 @@ database.ref("messages2").on("child_added", function(snapshot) {
 
   document.getElementById("messagesDiv").appendChild(messageElement);
 });
+
 
 // ページが読み込まれた時に、ローカルストレージに保存された名前があれば、名前入力欄を変更不可能にする
 window.addEventListener("load", function() {
@@ -118,26 +270,24 @@ document.getElementById("messageForm").addEventListener("submit", function(event
 	if (name === "" || text === "") {
 	  alert("名前とメッセージを入力してください。");
 	} else {
-document.getElementById("messageForm").addEventListener("submit", function(event) {
-	event.preventDefault();
-	var nameInput = document.getElementById("nameInput");
-	var messageInput = document.getElementById("messageInput");
-	var name = nameInput.value;
-	var text = messageInput.value;
-	if (name === "" || text === "") {
-	  alert("名前とメッセージを入力してください。");
-	} else {
+	  // 名前がすでに保存されているかどうかを確認する
+	  var savedName = localStorage.getItem("name");
+	  if (savedName && savedName !== name) {
+		alert("名前を変更するには、ページをリロードしてください。");
+		nameInput.value = savedName; // 入力欄に保存された名前を表示する
+		nameInput.disabled = true; // 名前を変更できないようにする
+	  } else {
 		database.ref("messages2").push({
-			name: name,
-			text: text,
-			time: firebase.database.ServerValue.TIMESTAMP
+		  name: name,
+		  text: text
 		});
 		localStorage.setItem("name", name); // 名前を保存する
 		nameInput.disabled = true; // 名前を変更できないようにする
 		messageInput.value = ""; // メッセージ欄をリセットする
 		messageInput.focus(); // メッセージ入力欄にフォーカスする
+	  }
 	}
-});
+  });
 
   // メッセージ更新ボタンをクリックした時に、メッセージを更新する
 document.getElementById("updateButton").addEventListener("click", function() {
