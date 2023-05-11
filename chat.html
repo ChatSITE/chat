@@ -116,24 +116,26 @@ document.getElementById("messageForm").addEventListener("submit", function(event
 	if (name === "" || text === "") {
 	  alert("名前とメッセージを入力してください。");
 	} else {
-	  // 名前がすでに保存されているかどうかを確認する
-	  var savedName = localStorage.getItem("name");
-	  if (savedName && savedName !== name) {
-		alert("名前を変更するには、ページをリロードしてください。");
-		nameInput.value = savedName; // 入力欄に保存された名前を表示する
-		nameInput.disabled = true; // 名前を変更できないようにする
-	  } else {
+document.getElementById("messageForm").addEventListener("submit", function(event) {
+	event.preventDefault();
+	var nameInput = document.getElementById("nameInput");
+	var messageInput = document.getElementById("messageInput");
+	var name = nameInput.value;
+	var text = messageInput.value;
+	if (name === "" || text === "") {
+	  alert("名前とメッセージを入力してください。");
+	} else {
 		database.ref("messages2").push({
-		  name: name,
-		  text: text
+			name: name,
+			text: text,
+			time: firebase.database.ServerValue.TIMESTAMP
 		});
 		localStorage.setItem("name", name); // 名前を保存する
 		nameInput.disabled = true; // 名前を変更できないようにする
 		messageInput.value = ""; // メッセージ欄をリセットする
 		messageInput.focus(); // メッセージ入力欄にフォーカスする
-	  }
 	}
-  });
+});
 
   // メッセージ更新ボタンをクリックした時に、メッセージを更新する
 document.getElementById("updateButton").addEventListener("click", function() {
