@@ -81,9 +81,11 @@ database.ref("messages2").on("child_added", function(snapshot) {
 	var message = snapshot.val();
 	var name = message.name;
 	var text = message.text;
+	var time = new Date(message.time);
 	var messageElement = document.createElement("div");
-	messageElement.innerText = name + ": " + text;
+	messageElement.innerText = name + ": " + text + " (" + time.toLocaleTimeString() + ")";
 	document.getElementById("messagesDiv").appendChild(messageElement);
+});
 	 // 削除ボタンを追加する
   var deleteButton = document.createElement("button");
   deleteButton.innerText = "削除";
