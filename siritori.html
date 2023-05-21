@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>しりとりゲーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <h1>しりとりゲーム</h1>
+
+  <div id="game-container">
+    <input type="text" id="word-input" placeholder="単語を入力してください">
+    <button id="submit-button">送信</button>
+    <button id="reset-button">リセット</button>
+    <div id="word-list"></div>
+  </div>
+  <!-- 単語表示部分のテンプレート -->
+<script type="text/template" id="word-template">
+    <div class="word-item" data-user-id="{{userId}}">
+      {{word}}
+    </div>
+  </script>
+  
+
+  <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-database-compat.js"></script>
+ 
+</body>
+</html>
+<style>
+  body {
+  font-family: Arial, sans-serif;
+  background-color: #f2f2f2;
+  padding: 20px;
+  text-align: center;
+}
+
+h1 {
+  color: #333;
+}
+
+#game-container {
+  background-color: #fff;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+#word-input {
+  width: 300px;
+  height: 30px;
+  font-size: 16px;
+  padding: 5px;
+  margin-right: 10px;
+}
+
+#submit-button {
+  font-size: 16px;
+  padding: 5px 10px;
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+#reset-button {
+  font-size: 16px;
+  padding: 5px 10px;
+  background-color: #f44336;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+#word-list {
+  margin-top: 20px;
+  text-align: left;
+}
+
+#word-list div {
+  background-color: #eee;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  font-size: 18px;
+}
+
+.my-word {
+  background-color: #ffc107; /* 自分が送信した単語の背景色 */
+  color: #ff0000; /* 自分が送信した単語のテキスト色 */
+}
+
+#game-finished-message {
+  background-color: #ff0000; /* 赤色の背景色 */
+  color: #ffffff; /* 白色のテキストカラー */
+  font-size: 24px; /* テキストのフォントサイズ */
+  text-align: center; /* テキストを中央揃え */
+  padding: 10px; /* テキストの余白 */
+}
+
+
+@media screen and (max-width: 480px) {
+
+    h1{
+        font-size: 25px;
+    }
+  #word-input {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+
+  #submit-button,
+  #reset-button {
+    width: 30%;
+    margin: 0;
+    margin-bottom: 10px;
+  }
+}
+
+</style>
+
+<script>
+    // Firebaseの設定
+var firebaseConfig = {
+    apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+	    authDomain: "chat-a1eca.firebaseapp.com",
+	    databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+	    projectId: "chat-a1eca",
+	    storageBucket: "chat-a1eca.appspot.com",
+	    messagingSenderId: "872682257719",
+	    appId: "your-app-id",
+	    measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+};
+
+// Firebaseの初期化
+firebase.initializeApp(firebaseConfig);
+var database = firebase.database();
+
+// ゲームの参加者ごとにユニークなIDを生成
+var userId = Math.random().toString(36).substring(7);
+
+// ゲームデータのリファレンスを取得
+var gameDataRef = database.ref("game");
+
+// 直前の単語の最後の文字
+var lastChar = null;
+
+// 最後にリセットされた単語ID
+var lastResetWordId = null;
+
+// Firebaseのデータがあるかどうかをチェック
+gameDataRef.child("words").on("value", function(snapshot) {
+  if (snapshot.exists()) {
+    // 直前の単語の最後の文字を取得
+    var words = snapshot.val();
+    var keys = Object.keys(words);
+    var lastWordId = keys[keys.length - 1];
+    
+    // 最後のリセット単語以降の単語のみを考慮
+    if (lastResetWordId !== lastWordId) {
+      var lastWord = words[lastWordId].word;
+      lastChar = lastWord.charAt(lastWord.length - 1);
+    }
+
+    // 単語要素の表示
+    var wordList = document.getElementById("word-list");
+    wordList.innerHTML = "";
+    keys.forEach(function(key) {
+      var wordData = words[key];
+      var wordElement = document.createElement("div");
+      wordElement.classList.add("word-item");
+      wordElement.textContent = wordData.word;
+      wordElement.setAttribute("data-user-id", wordData.userId);
+
+      // 自分が送信した単語の背景色を変更
+      if (wordData.userId === userId) {
+        wordElement.classList.add("my-word");
+      }
+
+      wordList.appendChild(wordElement);
+    });
+  }
+});
+
+// リセットボタンがクリックされたときの処理
+document.getElementById("reset-button").addEventListener("click", function() {
+  // Firebaseの単語データを削除
+  gameDataRef.child("words").remove();
+
+  // 直前の単語の最後の文字とリセット単語IDをリセット
+  lastChar = null;
+  lastResetWordId = null;
+
+  // アラートをFirebaseに送信
+  gameDataRef.child("alerts").push({
+    message: "リセットがされました"
+  });
+
+  // 全プレイヤーの単語リストをリセット
+  resetWordList();
+});
+
+// Firebaseのアラートデータが追加されたときの処理
+gameDataRef.child("alerts").on("child_added", function(snapshot) {
+  var alertData = snapshot.val();
+  alert(alertData.message);
+
+  // 全プレーヤーの単語リストをリセット
+  resetWordList();
+});
+
+// 単語リストのリセット
+function resetWordList() {
+  var wordList = document.getElementById("word-list");
+  wordList.innerHTML = "";
+}
+
+
+
+// Firebaseのアラートデータが追加されたときの処理
+gameDataRef.child("alerts").on("child_added", function(snapshot) {
+  var alertData = snapshot.val();
+  alert(alertData.message);
+});
+
+
+// 単語送信ボタンがクリックされたときの処理
+document.getElementById("submit-button").addEventListener("click", function() {
+  var word = document.getElementById("word-input").value;
+
+  if (word !== "") {
+    // スタートの人または前の単語の最後の文字から始まるかをチェック
+    if (lastChar === null || word.charAt(0) === lastChar) {
+      // 単語をFirebaseに送信
+      var newWordRef = gameDataRef.child("words").push({
+        userId: userId,
+        word: word
+      });
+
+      // 直前の文字を更新
+      lastChar = word.charAt(word.length - 1);
+
+      // 入力欄をクリア
+      document.getElementById("word-input").value = "";
+
+      // 送信した単語の背景色を変更
+      var wordId = newWordRef.key;
+      document.getElementById(wordId).classList.add("sent-word");
+    } else {
+      alert("前の単語の最後の文字から始まる単語を入力してください");
+    }
+  }
+});
+
+
+
+// 単語が追加されたときの処理
+gameDataRef.child("words").on("child_added", function(snapshot) {
+  var word = snapshot.val().word;
+
+  // 最後の文字が「ん」の場合、ゲーム終了
+  if (word.charAt(word.length - 1) === "ん") {
+    gameDataRef.child("finished").set(true);
+  }
+
+  // 単語リストに追加
+  var wordListElement = document.createElement("div");
+  wordListElement.innerText = word;
+  document.getElementById("word-list").appendChild(wordListElement);
+});
+
+// ゲーム終了時の処理
+gameDataRef.child("finished").on("value", function(snapshot) {
+  var finished = snapshot.val();
+
+  if (finished) {
+    // ゲーム終了メッセージが既に存在する場合は処理を終了する
+    if (document.getElementById("game-finished-message")) {
+      return;
+    }
+
+    // ゲーム終了メッセージを表示
+    var gameFinishedElement = document.createElement("div");
+    gameFinishedElement.id = "game-finished-message";
+    gameFinishedElement.innerText = "ゲーム終了！";
+    document.getElementById("game-container").appendChild(gameFinishedElement);
+
+    // 単語送信ボタンを無効化
+    document.getElementById("submit-button").disabled = true;
+  } else {
+    // ゲーム終了メッセージを削除
+    var gameFinishedElement = document.getElementById("game-finished-message");
+    if (gameFinishedElement) {
+      gameFinishedElement.remove();
+    }
+  }
+});
+
+// リセットボタンがクリックされたときの処理
+document.getElementById("reset-button").addEventListener("click", function() {
+  // ゲームデータを初期化
+  gameDataRef.set({
+    words: null,
+    finished: false
+  });
+
+  // 単語リストをクリア
+  document.getElementById("word-list").innerHTML = "";
+
+  // ゲーム終了メッセージを削除
+  var gameFinishedElement = document.getElementById("game-finished-message");
+  if (gameFinishedElement) {
+    gameFinishedElement.remove();
+  }
+
+  // 単語送信ボタンを有効化
+  document.getElementById("submit-button").disabled = false;
+});
+
+</script>
