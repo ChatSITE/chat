@@ -146,6 +146,11 @@ button{
  
 }
 
+.timestamp {
+  color: blue;
+  font-size: 8px;
+}
+
 </style>
 </head>
 <body>
@@ -223,11 +228,12 @@ button{
 		// Firebase Realtime Databaseに接続する
 var database = firebase.database();
 
-// メッセージを読み込んで表示する
+// Firebase Realtime Databaseからメッセージを読み込んで表示する
 database.ref("messages2").on("child_added", function(snapshot) {
   var message = snapshot.val();
   var name = message.name;
   var text = message.text;
+  var timestamp = message.timestamp;
   var messageElement = document.createElement("div");
   messageElement.innerText = name + ": " + text;
   messageElement.classList.add("message");
@@ -236,7 +242,11 @@ database.ref("messages2").on("child_added", function(snapshot) {
   } else {
     messageElement.classList.add("from-others");
   }
-
+  
+  var timestampElement = document.createElement("span");
+  timestampElement.innerText = "　" + timestamp + "";
+  timestampElement.classList.add("timestamp");
+  messageElement.appendChild(timestampElement); // タイムスタンプをメッセージ要素に追加する
   // 削除ボタンを追加する
   var deleteButton = document.createElement("button");
   deleteButton.innerText = "削除";
@@ -262,32 +272,35 @@ window.addEventListener("load", function() {
 	
 	// メッセージを送信する
 document.getElementById("messageForm").addEventListener("submit", function(event) {
-	event.preventDefault();
-	var nameInput = document.getElementById("nameInput");
-	var messageInput = document.getElementById("messageInput");
-	var name = nameInput.value;
-	var text = messageInput.value;
-	if (name === "" || text === "") {
-	  alert("名前とメッセージを入力してください。");
-	} else {
-	  // 名前がすでに保存されているかどうかを確認する
-	  var savedName = localStorage.getItem("name");
-	  if (savedName && savedName !== name) {
-		alert("名前を変更するには、ページをリロードしてください。");
-		nameInput.value = savedName; // 入力欄に保存された名前を表示する
-		nameInput.disabled = true; // 名前を変更できないようにする
-	  } else {
-		database.ref("messages2").push({
-		  name: name,
-		  text: text
-		});
-		localStorage.setItem("name", name); // 名前を保存する
-		nameInput.disabled = true; // 名前を変更できないようにする
-		messageInput.value = ""; // メッセージ欄をリセットする
-		messageInput.focus(); // メッセージ入力欄にフォーカスする
-	  }
-	}
-  });
+  event.preventDefault();
+  var nameInput = document.getElementById("nameInput");
+  var messageInput = document.getElementById("messageInput");
+  var name = nameInput.value;
+  var text = messageInput.value;
+  if (name === "" || text === "") {
+    alert("名前とメッセージを入力してください。");
+  } else {
+    // 名前がすでに保存されているかどうかを確認する
+    var savedName = localStorage.getItem("name");
+    if (savedName && savedName !== name) {
+      alert("名前を変更するには、ページをリロードしてください。");
+      nameInput.value = savedName; // 入力欄に保存された名前を表示する
+      nameInput.disabled = true; // 名前を変更できないようにする
+    } else {
+      var timestamp = new Date().toLocaleTimeString(); // 現在の時刻を取得する
+      var messageData = {
+        name: name,
+        text: text,
+        timestamp: timestamp // メッセージに時刻を追加する
+      };
+      database.ref("messages2").push(messageData);
+      localStorage.setItem("name", name); // 名前を保存する
+      nameInput.disabled = true; // 名前を変更できないようにする
+      messageInput.value = ""; // メッセージ欄をリセットする
+      messageInput.focus(); // メッセージ入力欄にフォーカスする
+    }
+  }
+});
 
   // メッセージ更新ボタンをクリックした時に、メッセージを更新する
 document.getElementById("updateButton").addEventListener("click", function() {
