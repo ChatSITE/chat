@@ -152,6 +152,26 @@ var lastChar = null;
 // 最後にリセットされた単語ID
 var lastResetWordId = null;
 
+// 送信ボタン要素を取得
+var submitButton = document.getElementById("submit-button");
+
+// ボタンの有効/無効状態を管理するフラグ
+var canSubmit = true;
+
+// 単語が追加されたときの処理
+gameDataRef.child("words").on("child_added", function(snapshot) {
+  var wordData = snapshot.val();
+
+  // 自分が送信した単語の場合はフラグを無効化
+  if (wordData.userId === userId) {
+    canSubmit = false;
+  } else {
+    // 他のユーザーが送信した場合はフラグを有効化し、ボタンを有効化
+    canSubmit = true;
+    submitButton.disabled = false;
+  }
+});
+
 // Firebaseのデータがあるかどうかをチェック
 gameDataRef.child("words").on("value", function(snapshot) {
   if (snapshot.exists()) {
@@ -230,6 +250,7 @@ gameDataRef.child("alerts").on("child_added", function(snapshot) {
 
 // 単語送信ボタンがクリックされたときの処理
 document.getElementById("submit-button").addEventListener("click", function() {
+    
   var word = document.getElementById("word-input").value;
 
   if (word !== "") {
@@ -258,20 +279,34 @@ document.getElementById("submit-button").addEventListener("click", function() {
 
 
 
+// ユーザーが送信した単語のリストを保持する変数
+var submittedWords = {};
+
 // 単語が追加されたときの処理
 gameDataRef.child("words").on("child_added", function(snapshot) {
-  var word = snapshot.val().word;
+  var wordData = snapshot.val();
+  var word = wordData.word;
 
   // 最後の文字が「ん」の場合、ゲーム終了
   if (word.charAt(word.length - 1) === "ん") {
     gameDataRef.child("finished").set(true);
   }
 
-  // 単語リストに追加
-  var wordListElement = document.createElement("div");
-  wordListElement.innerText = word;
-  document.getElementById("word-list").appendChild(wordListElement);
+  // 単語がすでに送信されているかチェック
+  if (submittedWords[word]) {
+    // 同じ単語が送信された場合、ゲーム終了
+    gameDataRef.child("finished").set(true);
+  } else {
+    // 単語を送信リストに追加
+    submittedWords[word] = true;
+
+    // 単語リストに追加
+    var wordListElement = document.createElement("div");
+    wordListElement.innerText = word;
+    document.getElementById("word-list").appendChild(wordListElement);
+  }
 });
+
 
 // ゲーム終了時の処理
 gameDataRef.child("finished").on("value", function(snapshot) {
