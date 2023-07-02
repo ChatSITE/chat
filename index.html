@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>チャット</title>
+  <style>
+    /* CSS スタイル */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #room-creation-container {
+      text-align: center;
+      margin-bottom: 20px;
+      margin-top: 20px;
+      display: none;
+    }
+
+    #create-room-form {
+      display: inline-block;
+     
+    }
+    #room-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+  border: 0.5px solid rgb(219, 219, 219);
+}
+
+
+.room-button {
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 4px;
+  background-color: #4285F4;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ 
+}
+
+.room-button:hover {
+  background-color: #45A049;
+}
+
+
+    #chat-container {
+      display: none;
+      border: 0.5px solid #ccc;
+      height: 650px;
+      overflow-y: scroll;
+      padding: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    #message-input {
+      width: 98%;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    #message-form {
+      display: none;
+      text-align: center;
+    }
+
+    .chat-message {
+    margin-bottom: 10px;
+  }
+
+  .chat-message .message-info {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 5px;
+  }
+
+  .chat-message .message-text {
+    font-size: 16px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .sent-message {
+    background-color: #f4f1f1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .received-message {
+    background-color: #DCF8C6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+    .error-message {
+      color: #f44336;
+      margin-bottom: 10px;
+    }
+
+    #room {
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  padding: 20px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+    #create-room-input, #create-room-password {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+
+  #submit {
+  margin-top: 10px;
+  background-color: #4285F4;
+  color: #fff;
+  font-size: 16px;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#reload {
+  margin-top: 10px;
+  background-color: #f44542;
+  color: #fff;
+  font-size: 16px;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#create{
+  margin-top: 10px;
+  background-color: #4285F4;
+  color: #fff;
+  font-size: 12px;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+#submit:hover {
+  background-color: #3367D6;
+}
+    /* スマートフォン向けのレイアウト */
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  #room-creation-container {
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+  }
+
+  #create-room-form {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  #create-room-input, #create-room-password {
+  width: 90%;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.room-button {
+    font-size: 14px;
+    padding: 8px 16px;
+}
+
+  button.room-button{
+    font-size:10px;
+    padding: 9px;
+  }
+  #chat-container {
+    height: 400px;
+    margin-bottom: 10px;
+  }
+
+  #message-input {
+    margin-top: 5px;
+    font-size: 16px;
+  }
+
+  #message-form {
+    margin-bottom: 10px;
+  }
+}
+#message-input {
+      width: 90%;}
+
+      p{
+        text-align: left;
+      }
+
+
+  </style>
+</head>
+<body>
+  <h1>チャット</h1>
+
+  <!-- ルーム作成フォーム -->
+  <div id="room">
+<p id="list">チャットに参加する</p>
+  <!-- ルーム一覧 -->
+  <div id="room-buttons"></div>
+  <p>ルームを作成する</p>
+  <button id="create" onclick="display()">ルーム新規作成</button>
+<br>
+  <div id="room-creation-container">
+    <br>
+    <form id="create-room-form">
+      <input type="text" id="create-room-input" placeholder="チャットルーム名" required>
+      <input type="password" id="create-room-password" placeholder="パスワード" required>
+      <button type="submit" class="room-button">ルーム作成</button>
+    </form>
+  </div>
+  </div>
+
+  <!-- チャットメッセージ表示 -->
+  <div id="chat-container"></div>
+
+  <!-- メッセージ入力フォーム -->
+  <form id="message-form">
+    <input type="text" id="message-input" placeholder="メッセージ">
+    <button type="submit" class="room-button" id="submit">送信</button>
+    <button id="reload" onclick="window.location.reload();">退出する</button>
+  </form>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    // Firebase の初期化
+    var firebaseConfig = {
+        apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+	    authDomain: "chat-a1eca.firebaseapp.com",
+	    databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+	    projectId: "chat-a1eca",
+	    storageBucket: "chat-a1eca.appspot.com",
+	    messagingSenderId: "872682257719",
+	    appId: "your-app-id",
+	    measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    // メッセージ送信処理
+    document.getElementById('message-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var messageInput = document.getElementById('message-input');
+      var message = messageInput.value.trim();
+
+      if (message !== '') {
+        var chatRoomRef = firebase.database().ref('chatRooms/' + currentRoomId + '/messages');
+        chatRoomRef.push().set({
+          message: message,
+          timestamp: Date.now(),
+          user: currentUserName
+        });
+
+        messageInput.value = '';
+      }
+    });
+
+    // チャットルーム作成処理
+    document.getElementById('create-room-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var roomNameInput = document.getElementById('create-room-input');
+      var passwordInput = document.getElementById('create-room-password');
+      var roomName = roomNameInput.value.trim();
+      var password = passwordInput.value.trim();
+
+      if (roomName !== '' && password !== '') {
+        var chatRoomRef = firebase.database().ref('chatRooms');
+        chatRoomRef.push().set({
+          roomName: roomName,
+          password: password
+        });
+
+        roomNameInput.value = '';
+        passwordInput.value = '';
+      }
+    });
+function display(){
+  document.getElementById('room-creation-container').style.display = 'block';
+}
+    // チャットルーム選択処理
+    var currentRoomId = null;
+    var currentRoomPassword = null;
+    var currentUserName = null;
+
+
+    function selectRoom(roomId) {
+      currentRoomId = roomId;
+
+    
+
+      // ルーム作成・選択画面を非表示にして、チャット画面を表示
+      document.getElementById('room-creation-container').style.display = 'none';
+      document.getElementById('room-buttons').style.display = 'none';
+      document.getElementById('chat-container').style.display = 'block';
+      document.getElementById('message-form').style.display = 'block';
+      document.getElementById('list').style.display = 'none';
+      document.getElementById('room').style.display = 'none';
+
+      // 選択したルームのメッセージを表示
+      var chatContainer = document.getElementById('chat-container');
+      chatContainer.innerHTML = '';
+
+      var chatRoomRef = firebase.database().ref('chatRooms/' + roomId + '/messages');
+      chatRoomRef.on('child_added', function(snapshot) {
+  var message = snapshot.val().message;
+  var timestamp = new Date(snapshot.val().timestamp);
+  var user = snapshot.val().user;
+  var chatMessage = document.createElement('div');
+  chatMessage.classList.add('chat-message');
+  chatMessage.innerHTML = `
+    <div class="message-info">
+      [${timestamp.toLocaleTimeString()}] ${user}
+    </div>
+    <div class="message-text ${user === currentUserName ? 'sent-message' : 'received-message'}">
+      ${message}
+    </div>
+  `;
+  chatContainer.appendChild(chatMessage);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+});
+
+
+    }
+
+    // ルームパスワードの確認
+    function checkPassword(roomId, password) {
+      var chatRoomRef = firebase.database().ref('chatRooms/' + roomId);
+      chatRoomRef.once('value', function(snapshot) {
+        var roomData = snapshot.val();
+        if (roomData.password === password) {
+          if (!localStorage.getItem('currentUserName')) {
+            var userName = prompt('ユーザー名を入力してください');
+            if (userName !== null && userName.trim() !== '') {
+              localStorage.setItem('currentUserName', userName.trim());
+              currentUserName = userName.trim();
+            }
+          } else {
+            currentUserName = localStorage.getItem('currentUserName');
+          }
+          selectRoom(roomId);
+        } else {
+          alert('パスワードが違います');
+        }
+      });
+    }
+
+    // チャットルーム一覧を表示
+    var roomButtons = document.getElementById('room-buttons');
+    var chatRoomsRef = firebase.database().ref('chatRooms');
+    chatRoomsRef.on('child_added', function(snapshot) {
+      var roomId = snapshot.key;
+      var roomName = snapshot.val().roomName;
+
+      var roomButton = document.createElement('button');
+      roomButton.innerText = roomName;
+      roomButton.classList.add('room-button');
+      roomButton.addEventListener('click', function() {
+        var password = prompt('パスワードを入力してください');
+        if (password !== null) {
+          checkPassword(roomId, password);
+        }
+      });
+
+      roomButtons.appendChild(roomButton);
+    });
+  </script>
+</body>
+</html>
