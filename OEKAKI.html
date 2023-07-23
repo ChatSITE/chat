@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お絵描きチャット</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f7f7f7;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 800px;
+      background-color: #fff;
+      box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    #canvas {
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+    }
+
+    #thicknessRange {
+      width: 200px;
+      margin-bottom: 10px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .button {
+      padding: 10px 16px;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #clearBtn {
+      background-color: #f44336;
+    }
+
+    #sendBtn {
+      background-color: #2196F3;
+    }
+
+    #chatBox {
+      width: 100%;
+      max-width: 800px;
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 4px;
+    }
+
+    .chat-message {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      padding: 10px;
+    }
+
+    .chat-message img {
+      max-width: 100px;
+    }
+
+    @media screen and (max-width: 600px) {
+      #container {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      #canvas {
+        max-width: 100%;
+      }
+
+      #chatBox {
+        max-width: 100%;
+      }
+
+      button{
+        width: 75px;
+        height: 35px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>お絵描きチャット</h1>
+    <canvas id="canvas" width="700" height="500"></canvas>
+    <div class="buttons">
+      <button id="eraserBtn" class="button">Eraser</button>
+      <label for="thicknessRange">Line Thickness:</label>
+      <input type="range" id="thicknessRange" min="1" max="40" value="5">
+      <button id="clearBtn" class="button">Clear</button>
+      <button id="sendBtn" class="button">Send</button>
+    </div>
+    <div id="chatBox"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    // Firebaseの設定情報
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+	    authDomain: "chat-a1eca.firebaseapp.com",
+	    databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+	    projectId: "chat-a1eca",
+	    storageBucket: "chat-a1eca.appspot.com",
+	    messagingSenderId: "872682257719",
+	    appId: "your-app-id",
+	    measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+    };
+
+    // Firebaseの初期化
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // 描画用変数
+    let isDrawing = false;
+    let isErasing = false;
+    let prevX = 0;
+    let prevY = 0;
+    let lineThickness = 5;
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // マウスイベント
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    // タッチイベント
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', handleDrawing);
+    canvas.addEventListener('touchend', stopDrawing);
+
+    const eraserBtn = document.getElementById('eraserBtn');
+    eraserBtn.addEventListener('click', toggleEraserMode);
+
+    const thicknessRange = document.getElementById('thicknessRange');
+    thicknessRange.addEventListener('input', changeLineThickness);
+
+    const clearBtn = document.getElementById('clearBtn');
+    clearBtn.addEventListener('click', clearCanvas);
+
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.addEventListener('click', sendDrawing);
+
+    const chatBox = document.getElementById('chatBox');
+
+    function toggleEraserMode() {
+      isErasing = !isErasing;
+      if (isErasing) {
+        eraserBtn.textContent = 'Draw';
+      } else {
+        eraserBtn.textContent = 'Eraser';
+      }
+    }
+
+    function changeLineThickness(e) {
+      lineThickness = parseInt(e.target.value, 10);
+    }
+
+    function startDrawing(e) {
+      e.preventDefault();
+      isDrawing = true;
+      if (e.type === 'mousedown') {
+        prevX = e.offsetX;
+        prevY = e.offsetY;
+      } else if (e.type === 'touchstart') {
+        const touch = e.touches[0];
+        const touchPos = getCursorPosition(canvas, touch);
+        prevX = touchPos.x;
+        prevY = touchPos.y;
+      }
+    }
+
+    function draw(e) {
+      e.preventDefault();
+      if (!isDrawing) return;
+
+      let x, y;
+      if (e.type === 'mousemove') {
+        x = e.offsetX;
+        y = e.offsetY;
+      } else if (e.type === 'touchmove') {
+        x = e.touches[0].clientX - canvas.offsetLeft;
+        y = e.touches[0].clientY - canvas.offsetTop;
+      }
+
+      if (isErasing) {
+        ctx.strokeStyle = '#fff'; // 白色で描画して消す
+        ctx.lineWidth = lineThickness + 10; // 消しゴムの太さは線の太さより大きくする
+      } else {
+        ctx.strokeStyle = '#000'; // 黒色で描画
+        ctx.lineWidth = lineThickness;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(prevX, prevY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      prevX = x;
+      prevY = y;
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function sendDrawing() {
+      const imageBase64 = canvas.toDataURL();
+      const chatMessage = {
+        type: 'drawing',
+        data: imageBase64
+      };
+
+      database.ref('chat').push(chatMessage);
+      clearCanvas();
+    }
+
+    function appendToChatBox(message) {
+      const chatMessageDiv = document.createElement('div');
+      chatMessageDiv.classList.add('chat-message');
+
+      const img = new Image();
+      img.src = message.data;
+      img.width = 200;
+      chatMessageDiv.appendChild(img);
+
+      chatBox.appendChild(chatMessageDiv);
+
+      // メッセージを追加したら一番下までスクロール
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    database.ref('chat').on('child_added', (snapshot) => {
+      const message = snapshot.val();
+      if (message.type === 'drawing') {
+        appendToChatBox(message);
+      }
+    });
+
+    function getCursorPosition(canvas, event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      return { x, y };
+    }
+
+    // タッチイベント座標取得のために、マウスイベントの処理を関数にまとめる
+    function handleDrawing(e) {
+      e.preventDefault();
+      if (!isDrawing) return;
+
+      let x, y;
+      if (e.type === 'mousemove') {
+        x = e.offsetX;
+        y = e.offsetY;
+      } else if (e.type === 'touchmove') {
+        const touch = e.touches[0];
+        const touchPos = getCursorPosition(canvas, touch);
+        x = touchPos.x;
+        y = touchPos.y;
+      }
+
+      // 以下の処理は変更なし
+      if (isErasing) {
+        ctx.strokeStyle = '#fff'; // 白色で描画して消す
+        ctx.lineWidth = lineThickness + 10; // 消しゴムの太さは線の太さより大きくする
+      } else {
+        ctx.strokeStyle = '#000'; // 黒色で描画
+        ctx.lineWidth = lineThickness;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(prevX, prevY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      prevX = x;
+      prevY = y;
+    }
+  </script>
+</body>
+</html>
