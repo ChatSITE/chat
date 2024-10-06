@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>日本語伝言ゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+        <h1>日本語伝言ゲーム</br>Chinese Whispers</h1>
+    <div class="container">
+
+        <div class="team" id="teamA">
+            <h2>Team A</h2>
+            <p>Score: <span id="scoreA" class="score">0</span></p>
+            <button onclick="addScore('A', 10)">+10点</button>
+            <button onclick="addScore('A', 5)">+5点</button>
+            <button onclick="addScore('A', 1)">+1点</button>
+            <button onclick="addScore('A', -1)">-1点</button>
+        </div>
+        <div class="team" id="teamB">
+            <h2>Team B</h2>
+            <p>Score: <span id="scoreB" class="score">0</span></p>
+            <button onclick="addScore('B', 10)">+10点</button>
+            <button onclick="addScore('B', 5)">+5点</button>
+            <button onclick="addScore('B', 1)">+1点</button>
+            <button onclick="addScore('B', -1)">-1点</button>
+        </div>
+        <div class="team" id="teamC">
+            <h2>Team C</h2>
+            <p>Score: <span id="scoreC" class="score">0</span></p>
+            <button onclick="addScore('C', 10)">+10点</button>
+            <button onclick="addScore('C', 5)">+5点</button>
+            <button onclick="addScore('C', 1)">+1点</button>
+            <button onclick="addScore('C', -1)">-1点</button>
+        </div>
+        <div class="team" id="teamD">
+            <h2>Team D</h2>
+            <p>Score: <span id="scoreD" class="score">0</span></p>
+            <button onclick="addScore('D', 10)">+10点</button>
+            <button onclick="addScore('D', 5)">+5点</button>
+            <button onclick="addScore('D', 1)">+1点</button>
+            <button onclick="addScore('D', -1)">-1点</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
+
+body {
+    background-image: url('img.jpg');
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+}
+
+h1 {
+ -webkit-text-stroke-width: 5px;
+  -webkit-text-stroke-color: black;
+    font-size: 6em;
+    color: #E8FF5F;
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin-bottom: 100px;
+}
+
+.container {
+    display: flex;
+    flex-direction: row; /* 横並びに設定 */
+    align-items: center;
+    gap: 20px; /* チーム間の間隔を設定 */
+}
+
+.team {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.team h2 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.team p {
+    font-size: 1.5em;
+}
+
+.score {
+    font-size: 2em;
+    color: #d9534f; /* 合計スコアの色を変更 */
+}
+
+button {
+    font-size: 1em;
+    font-weight: bold;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007BFF;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+</style>
+<script>
+  let scores = {
+    A: 0,
+    B: 0,
+    C: 0,
+    D: 0
+};
+
+function addScore(team, points) {
+    scores[team] += points;
+    document.getElementById(`score${team}`).innerText = scores[team];
+}
+
+</script>
