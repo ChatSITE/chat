@@ -1,0 +1,127 @@
+/* 全体のリセット */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+/* コンテナ */
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* ヘッダー */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 2rem;
+    color: #4CAF50;
+}
+
+header p {
+    font-size: 1rem;
+    color: #666;
+}
+
+/* チーム登録セクション */
+.team-registration {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.team-registration h2 {
+    font-size: 1.5rem;
+    color: #4CAF50;
+    margin-bottom: 10px;
+}
+
+.input-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.input-group input {
+    padding: 10px;
+    font-size: 1rem;
+    width: 200px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+}
+
+.input-group input:focus {
+    border-color: #4CAF50;
+}
+
+.input-group button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.input-group button:hover {
+    background-color: #45a049;
+}
+
+#teamDisplay {
+    margin-top: 10px;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+/* 単語カードセクション */
+.card-section {
+    text-align: center;
+}
+
+.card-section h2 {
+    font-size: 1.5rem;
+    color: #4CAF50;
+    margin-bottom: 20px;
+}
+
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+    transform: translateY(-5px);
+}
