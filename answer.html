@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>回答者画面</title>
+    <link rel="stylesheet" href="answer.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>回答者画面</h1>
+            <p>チーム名を登録し、問題の単語に対してボタンを押してください。</p>
+        </header>
+
+        <section class="team-registration">
+            <h2>チーム登録</h2>
+            <div class="input-group">
+                <input type="text" id="teamName" placeholder="チーム名を入力" />
+                <button id="registerTeam">登録</button>
+            </div>
+            <div id="teamDisplay" style="display: none;">
+                <p>登録チーム名: <strong id="teamNameDisplay"></strong></p>
+            </div>
+        </section>
+
+        <section class="card-section">
+            <h2>単語リスト</h2>
+            <div class="card-container">
+                <!-- 単語カードがここに生成される -->
+            </div>
+        </section>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="answer.js"></script>
+</body>
+</html>
