@@ -1,0 +1,122 @@
+/* 全体のリセット */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+/* コンテナ */
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* ヘッダー */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 2rem;
+    color: #4CAF50;
+}
+
+header p {
+    font-size: 1rem;
+    color: #666;
+}
+
+/* 問題切り替えセクション */
+.question-controls {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.question-controls h2 {
+    font-size: 1.5rem;
+    color: #4CAF50;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.question-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.question-btn:hover {
+    background-color: #45a049;
+}
+
+/* 回答テーブル */
+.response-table-section {
+    margin-top: 20px;
+}
+
+.response-table-section h2 {
+    font-size: 1.5rem;
+    color: #4CAF50;
+    margin-bottom: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+    margin-top: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+table th, table td {
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+table th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+table tr:hover {
+    background-color: #f1f1f1;
+}
+
+table td {
+    color: #555;
+}
+
+/* 現在時刻の表示セクション */
+.time-display {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.time-display h2 {
+    font-size: 1.5rem;
+    color: #4CAF50;
+}
+
+#current-time {
+    font-size: 2rem;
+    color: #333;
+    font-weight: bold;
+    margin-top: 10px;
+}
