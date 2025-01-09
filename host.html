@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出題者画面</title>
+    <link rel="stylesheet" href="host.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>出題者画面</h1>
+            <p>現在の問題を切り替えたり、回答を確認することができます。</p>
+        </header>
+
+        <section class="time-display">
+            <h2>現在の時刻</h2>
+            <p id="current-time">00:00:00</p>
+        </section>
+
+        <section class="question-controls">
+            <h2>問題切り替え</h2>
+            <div class="button-group">
+                <button class="question-btn" data-question="1">問題 1</button>
+                <button class="question-btn" data-question="2">問題 2</button>
+                <button class="question-btn" data-question="3">問題 3</button>
+                <button class="question-btn" data-question="4">問題 4</button>
+            </div>
+        </section>
+
+        <section class="response-table-section">
+            <h2>回答一覧</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>単語</th>
+                        <th>チーム名</th>
+                        <th>時刻</th>
+                    </tr>
+                </thead>
+                <tbody id="response-table">
+                    <!-- 回答データが追加される -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="host.js"></script>
+</body>
+</html>
