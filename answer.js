@@ -21,7 +21,7 @@ const cardContainer = document.querySelector('.card-container');
 
 // 問題データ
 const questions = {
-    1: ["hello", "world", "music", "song", "happy", "dance", "love", "life", "dream", "smile"],
+    1: ["coming", "voyaging", "ancestor", "kite", "wayfinder", "weaving", "thriving", "roof", "dream", "view"],
     2: ["apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew", "kiwi", "lemon"],
     3: ["dog", "cat", "bird", "fish", "lion", "tiger", "bear", "rabbit", "horse", "elephant"],
     4: ["red", "blue", "green", "yellow", "purple", "orange", "pink", "brown", "black", "white"]
