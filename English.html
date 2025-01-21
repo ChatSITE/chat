@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英語学習ツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #fff;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            text-align: center;
+        }
+
+        .mode-selector {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .mode-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 0 0.5rem;
+        }
+
+        .mode-btn.active {
+            background: #2E7D32;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-container {
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+
+        .slider-container label {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .slider-container input[type="range"] {
+            width: 100%;
+            appearance: none;
+            height: 5px;
+            background: #4CAF50;
+            border-radius: 5px;
+            outline: none;
+            margin: 1rem 0;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 0.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background: #388E3C;
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button#stopButton {
+            background: #e53935;
+        }
+
+        button#stopButton:hover:not(:disabled) {
+            background: #d32f2f;
+        }
+
+        .quiz {
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+
+        .word {
+            display: inline-block;
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f9f9f9;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .output-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            margin-top: 40px;
+        }
+
+        .output-box {
+            width: 30%;
+            text-align: center;
+            color: #333;
+            font-size: 2rem;
+            font-weight: bold;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 150px;
+        }
+
+        .output-box.current {
+            font-size: 4rem;
+            color: #4CAF50;
+            background: #e8f5e9;
+            border: 2px solid #4CAF50;
+        }
+
+        .result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            color: #444;
+        }
+
+        .correct { color: #4CAF50; font-weight: bold; }
+        .incorrect { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <header>英語学習ツール</header>
+
+    <div class="container">
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('flash')">フラッシュモード</button>
+            <button class="mode-btn" onclick="switchMode('quiz')">クイズモード</button>
+        </div>
+
+        <textarea id="textInput" placeholder="英文を入力してください"></textarea>
+
+        <div id="flash-section" style="display: block;">
+            <div class="slider-container">
+                <label for="speedRange">表示速度 (単語/秒): <span id="speedValue">5</span></label>
+                <input type="range" id="speedRange" min="1" max="20" value="5">
+            </div>
+            <button id="startButton">開始</button>
+            <button id="stopButton" disabled>停止</button>
+            <div class="output-container">
+                <div class="output-box" id="prevWord">---</div>
+                <div class="output-box current" id="currentWord">単語</div>
+                <div class="output-box" id="nextWord">---</div>
+            </div>
+        </div>
+
+        <div id="quiz-section" style="display: none;">
+            <button onclick="generateQuiz()">クイズを作成</button>
+            <div id="quiz" class="quiz"></div>
+            <button id="submitBtn" onclick="checkAnswers()" style="display: none;">回答を確認</button>
+            <div id="result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'flash';
+        let previousHoles = [];
+        let words = [];
+        let currentIndex = 0;
+        let interval;
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('flash-section').style.display = mode === 'flash' ? 'block' : 'none';
+            document.getElementById('quiz-section').style.display = mode === 'quiz' ? 'block' : 'none';
+            
+            if (interval) {
+                clearInterval(interval);
+                resetFlashDisplay();
+            }
+        }
+
+        const speedRange = document.getElementById('speedRange');
+        const speedValue = document.getElementById('speedValue');
+        
+        speedRange.addEventListener('input', () => {
+            speedValue.textContent = speedRange.value;
+        });
+
+        document.getElementById('startButton').addEventListener('click', () => {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                document.getElementById('currentWord').textContent = '英文を入力';
+                return;
+            }
+
+            words = text.split(/\s+/);
+            currentIndex = 0;
+            clearInterval(interval);
+
+            document.getElementById('startButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
+
+            const speed = 1000 / parseInt(speedRange.value);
+
+            interval = setInterval(() => {
+                if (currentIndex < words.length) {
+                    document.getElementById('prevWord').textContent = words[currentIndex - 1] || '---';
+                    document.getElementById('currentWord').textContent = words[currentIndex];
+                    document.getElementById('nextWord').textContent = words[currentIndex + 1] || '---';
+                    currentIndex++;
+                } else {
+                    clearInterval(interval);
+                    resetFlashDisplay('終了！');
+                }
+            }, speed);
+        });
+
+        document.getElementById('stopButton').addEventListener('click', () => {
+            clearInterval(interval);
+            resetFlashDisplay('停止');
+        });
+
+        function resetFlashDisplay(currentText = '単語') {
+            document.getElementById('currentWord').textContent = currentText;
+            document.getElementById('prevWord').textContent = '---';
+            document.getElementById('nextWord').textContent = '---';
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
+        }
+
+        function generateQuiz() {
+            const inputText = document.getElementById('textInput').value.trim();
+            if (!inputText) {
+                alert('英文を入力してください。');
+                return;
+            }
+
+            const words = inputText.split(' ');
+            const quizContainer = document.getElementById('quiz');
+            quizContainer.innerHTML = '';
+
+            const holes = generateRandomHoles(words.length);
+            previousHoles = holes;
+
+            const holeWords = holes.map(index => words[index]);
+
+            words.forEach((word, index) => {
+                if (holes.includes(index)) {
+                    const options = generateOptions(word, holeWords);
+                    const select = document.createElement('select');
+                    select.classList.add('dropdown');
+                    select.dataset.correct = word;
+
+                    options.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option;
+                        opt.textContent = option;
+                        select.appendChild(opt);
+                    });
+
+                    const span = document.createElement('span');
+                    span.classList.add('word');
+                    span.textContent = `(${index + 1}) `;
+                    span.appendChild(select);
+                    quizContainer.appendChild(span);
+                } else {
+                    const span = document.createElement('span');
+                    span.classList.add('word');
+                    span.textContent = word;
+                    quizContainer.appendChild(span);
+                }
+            });
+
+            document.getElementById('submitBtn').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function generateRandomHoles(wordCount) {
+            const holes = [];
+            const maxHoles = Math.floor(wordCount / 3);
+
+            while (holes.length < maxHoles) {
+                const randomIndex = Math.floor(Math.random() * wordCount);
+                if (!holes.includes(randomIndex) && !previousHoles.includes(randomIndex)) {
+                    holes.push(randomIndex);
+                }
+            }
+
+            return holes;
+        }
+
+        function generateOptions(correctWord, holeWords) {
+            const options = [correctWord];
+            while (options.length < 3) {
+                const randomWord = holeWords[Math.floor(Math.random() * holeWords.length)];
+                if (!options.includes(randomWord)) {
+                    options.push(randomWord);
+                }
+            }
+            return options.sort(() => Math.random() - 0.5);
+        }
+
+        function checkAnswers() {
+            const quizContainer = document.getElementById('quiz');
+            const selects = quizContainer.querySelectorAll('select');
+            const resultContainer = document.getElementById('result');
+
+            let correctCount = 0;
+            selects.forEach((select) => {
+                const correctWord = select.dataset.correct;
+                if (select.value === correctWord) {
+                    select.style.border = '2px solid green';
+                    correctCount++;
+                } else {
+                    select.style.border = '2px solid red';
+                }
+            });
+
+            resultContainer.style.display = 'block';
+            resultContainer.innerHTML = `正解数: <span class="correct">${correctCount}</span> / <span class="incorrect">${selects.length}</span>`;
+        }
+    </script>
+</body>
+</html>
