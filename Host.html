@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+    <meta charset="UTF-8">
+<html>
+<head>
+    <title>Quiz Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e5e9f2);
+            color: #2c3e50;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0 40px;
+            font-size: 2.5em;
+            color: #3498db;
+            font-weight: 700;
+        }
+
+        .control-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #e5e9f2;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: #2c3e50;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .start-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .stop-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .add-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        #timer {
+            font-size: 4em;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Roboto Mono', monospace;
+            color: #2c3e50;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .word-list {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        #wordList {
+            list-style: none;
+        }
+
+        #wordList li {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8fafc;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        #wordList li:hover {
+            transform: translateX(5px);
+            background: #edf2f7;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            color: #2c3e50;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .control-panel, .word-list {
+                padding: 20px;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            #timer {
+                font-size: 3em;
+            }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-running {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .status-stopped {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .song-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .song-icon {
+            font-size: 24px;
+            color: #3498db;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quiz Admin Panel</h1>
+        
+        <div class="control-panel">
+            <div class="song-selection">
+                <select id="songSelect">
+                    <option value="song1">モアナ</option>
+                    <option value="song2">曲2</option>
+                    <option value="song3">アリエル</option>
+                </select>
+            </div>
+
+            <div class="word-input-group">
+                <input type="text" id="word" placeholder="単語">
+                <input type="number" id="timing" placeholder="秒数">
+                <button onclick="addWord()" class="add-word-btn">追加</button>
+            </div>
+
+            <div class="button-group">
+                <button id="startButton" class="start-btn">開始</button>
+                <button id="stopButton" class="stop-btn">停止</button>
+            </div>
+
+            <div id="timer">00:00</div>
+        </div>
+
+        <div class="word-list">
+            <h2>Word List</h2>
+            <ul id="wordList"></ul>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        // Firebase config here
+        const firebaseConfig = {
+apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+authDomain: "chat-a1eca.firebaseapp.com",
+databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+projectId: "chat-a1eca",
+storageBucket: "chat-a1eca.appspot.com",
+messagingSenderId: "872682257719",
+appId: "your-app-id",
+measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const db = firebase.database();
+        let currentWords = [];
+        let gameTimer;
+        let startTime;
+        let isGameRunning = false;
+
+        function addWord() {
+            const word = document.getElementById('word').value;
+            const timing = parseFloat(document.getElementById('timing').value);
+            const song = document.getElementById('songSelect').value;
+
+            if (word && timing) {
+                currentWords.push({word, timing});
+                updateWordList();
+                saveToDatabase(song);
+                
+                document.getElementById('word').value = '';
+                document.getElementById('timing').value = '';
+            }
+        }
+
+        function updateWordList() {
+            const list = document.getElementById('wordList');
+            list.innerHTML = '';
+            currentWords.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = `${item.word} - ${item.timing}秒`;
+                list.appendChild(li);
+            });
+        }
+
+        function saveToDatabase(song) {
+            db.ref(`songs/${song}`).set(currentWords);
+        }
+
+        document.getElementById('songSelect').addEventListener('change', function() {
+            const song = this.value;
+            db.ref('gameState').update({ currentSong: song });
+            db.ref(`songs/${song}`).once('value').then(snapshot => {
+                currentWords = snapshot.val() || [];
+                updateWordList();
+            });
+        });
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            if (!isGameRunning) {
+                const song = document.getElementById('songSelect').value;
+                startTime = Date.now();
+                isGameRunning = true;
+                db.ref('gameState').set({
+                    status: 'playing',
+                    startTime: startTime,
+                    currentSong: song
+                });
+                startTimer();
+            }
+        });
+
+        document.getElementById('stopButton').addEventListener('click', function() {
+            stopGame();
+        });
+
+        function stopGame() {
+            if (isGameRunning) {
+                clearInterval(gameTimer);
+                isGameRunning = false;
+                db.ref('gameState').set({
+                    status: 'stopped',
+                    currentSong: document.getElementById('songSelect').value
+                });
+                document.getElementById('timer').textContent = '00:00';
+            }
+        }
+
+        function startTimer() {
+            if (gameTimer) clearInterval(gameTimer);
+            
+            gameTimer = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('timer').textContent = 
+                    `${Math.floor(elapsed / 60)}:${(elapsed % 60).toFixed(0).padStart(2, '0')}`;
+                
+                checkCurrentWords(elapsed);
+            }, 100);
+        }
+
+        function checkCurrentWords(currentTime) {
+            currentWords.forEach(item => {
+                if (Math.abs(currentTime - item.timing) <= 1) {
+                    document.getElementById('result').textContent = 
+                        `現在の単語: ${item.word}`;
+                }
+            });
+        }
+
+        db.ref('answers').on('value', snapshot => {
+            const answers = snapshot.val();
+            if (answers) {
+                Object.entries(answers).forEach(([team, teamAnswers]) => {
+                    Object.values(teamAnswers).forEach(answer => {
+                        const word = answer.word;
+                        const time = answer.time;
+                        
+                        const correctWord = currentWords.find(w => 
+                            w.word === word && Math.abs(w.timing - time) <= 1);
+                        
+                        if (correctWord) {
+                            document.getElementById('result').innerHTML += 
+                                `<br>${team}: 正解! (${word} - ${time.toFixed(1)}秒)`;
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
