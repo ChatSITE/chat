@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+    <meta charset="UTF-8">
+<head>
+    <title>Quiz Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            color: #2c3e50;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0 40px;
+            font-size: 2.5em;
+            color: #3498db;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .team-setup {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .team-setup h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #e5e9f2;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: #2c3e50;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: #3498db;
+            color: white;
+            min-width: 120px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #2980b9;
+        }
+
+        .game-area {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .word-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .word-button {
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            background: #f8fafc;
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid #e5e9f2;
+        }
+
+        .word-button:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+            border-color: #3498db;
+        }
+
+        .word-button:active {
+            transform: translateY(0);
+        }
+
+        #timer {
+            font-size: 4em;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Roboto Mono', monospace;
+            color: #2c3e50;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            color: #2c3e50;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-playing {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .status-waiting {
+            background: #f1c40f;
+            color: white;
+        }
+
+        .answered {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #ecf0f1 !important;
+            color: #95a5a6 !important;
+            transform: none !important;
+        }
+
+        .result-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-correct {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .result-incorrect {
+            background: rgba(231, 76, 60, 0.1);
+            color: #c0392b;
+        }
+
+        .result-icon {
+            font-size: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+                margin: 15px 0 30px;
+            }
+
+            .game-area {
+                padding: 20px;
+            }
+
+            .word-buttons {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+            }
+
+            .word-button {
+                padding: 15px;
+                font-size: 14px;
+            }
+
+            #timer {
+                font-size: 3em;
+            }
+
+            button {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* ツールチップ */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 12px;
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Music Quiz Player</h1>
+
+        <div class="team-setup fade-in">
+            <h2>チーム登録</h2>
+            <input type="text" id="teamName" placeholder="チーム名を入力してください" maxlength="20">
+            <button onclick="setTeam()">参加する</button>
+        </div>
+
+        <div id="gameArea" class="game-area hidden">
+            <div id="statusBadge" class="status-badge status-waiting">待機中...</div>
+            
+            <div class="word-buttons" id="wordButtons"></div>
+
+            <div id="timer">00:00</div>
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        // Firebase config here
+        const firebaseConfig = {
+apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+authDomain: "chat-a1eca.firebaseapp.com",
+databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+projectId: "chat-a1eca",
+storageBucket: "chat-a1eca.appspot.com",
+messagingSenderId: "872682257719",
+appId: "your-app-id",
+measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const db = firebase.database();
+        let teamName = '';
+        let wordList = [];
+        let gameTimer;
+        let gameStartTime;
+        let answeredWords = new Set();
+
+        function setTeam() {
+            teamName = document.getElementById('teamName').value;
+            if (teamName) {
+                document.querySelector('.team-setup').classList.add('hidden');
+                document.getElementById('gameArea').classList.remove('hidden');
+                document.getElementById('gameArea').classList.add('fade-in');
+                initializeGameStateListener();
+            }
+        }
+
+        function createWordButtons() {
+            const container = document.getElementById('wordButtons');
+            container.innerHTML = '';
+            wordList.forEach(item => {
+                const button = document.createElement('button');
+                button.textContent = item.word;
+                button.className = 'word-button';
+                button.onclick = () => submitAnswer(item.word, button);
+                container.appendChild(button);
+            });
+        }
+
+        function submitAnswer(word, button) {
+            if (answeredWords.has(word)) return;
+
+            const currentTime = (Date.now() - gameStartTime) / 1000;
+            
+            db.ref(`answers/${teamName}`).push({
+                word: word,
+                time: currentTime
+            });
+
+            answeredWords.add(word);
+            button.classList.add('answered');
+
+            const correctWord = wordList.find(w => 
+                w.word === word && Math.abs(w.timing - currentTime) <= 1);
+            
+            const resultElement = document.getElementById('result');
+            if (correctWord) {
+                resultElement.innerHTML += `
+                    <div class="fade-in" style="color: #27ae60">
+                        ✓ "${word}" (${currentTime.toFixed(1)}秒)
+                    </div>`;
+            } else {
+                resultElement.innerHTML += `
+                    <div class="fade-in" style="color: #e74c3c">
+                        ✗ "${word}" (${currentTime.toFixed(1)}秒)
+                    </div>`;
+            }
+        }
+
+        function initializeGameStateListener() {
+            db.ref('gameState').on('value', snapshot => {
+                const gameState = snapshot.val();
+                if (!gameState) return;
+
+                if (gameState.status === 'playing') {
+                    gameStartTime = gameState.startTime;
+                    startTimer();
+                    document.getElementById('statusBadge').className = 'status-badge status-playing';
+                    document.getElementById('statusBadge').textContent = 'プレイ中';
+                    loadWordList(gameState.currentSong);
+                } else if (gameState.status === 'stopped') {
+                    stopTimer();
+                    document.getElementById('statusBadge').className = 'status-badge status-waiting';
+                    document.getElementById('statusBadge').textContent = '待機中';
+                    loadWordList(gameState.currentSong);
+                }
+            });
+        }
+
+        function loadWordList(song) {
+            db.ref(`songs/${song}`).once('value').then(snapshot => {
+                wordList = snapshot.val() || [];
+                createWordButtons();
+                answeredWords.clear();
+                document.getElementById('result').innerHTML = '';
+            });
+        }
+
+        function startTimer() {
+            if (gameTimer) clearInterval(gameTimer);
+            
+            gameTimer = setInterval(() => {
+                const elapsed = (Date.now() - gameStartTime) / 1000;
+                document.getElementById('timer').textContent = 
+                    `${Math.floor(elapsed / 60)}:${(elapsed % 60).toFixed(0).padStart(2, '0')}`;
+            }, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(gameTimer);
+            document.getElementById('timer').textContent = '00:00';
+        }
+    </script>
+</body>
+</html>
