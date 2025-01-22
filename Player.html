@@ -138,9 +138,27 @@
         #result {
             margin-top: 20px;
             padding: 20px;
-            background: #f8fafc;
             border-radius: 12px;
-            color: #2c3e50;
+        }
+
+        .result-item {
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-weight: 500;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .result-correct {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border-left: 4px solid #27ae60;
+        }
+
+        .result-incorrect {
+            background: rgba(231, 76, 60, 0.1);
+            color: #c0392b;
+            border-left: 4px solid #c0392b;
         }
 
         .status-badge {
@@ -168,29 +186,16 @@
             background: #ecf0f1 !important;
             color: #95a5a6 !important;
             transform: none !important;
+            border-color: #ecf0f1 !important;
         }
 
-        .result-item {
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .hidden {
+            display: none;
         }
 
-        .result-correct {
-            background: rgba(46, 204, 113, 0.1);
-            color: #27ae60;
-        }
-
-        .result-incorrect {
-            background: rgba(231, 76, 60, 0.1);
-            color: #c0392b;
-        }
-
-        .result-icon {
-            font-size: 20px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 768px) {
@@ -226,44 +231,13 @@
                 margin: 5px 0;
             }
         }
-
-        /* アニメーション */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-
-        /* ツールチップ */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 8px 12px;
-            background: rgba(44, 62, 80, 0.9);
-            color: white;
-            border-radius: 6px;
-            font-size: 14px;
-            white-space: nowrap;
-            z-index: 1000;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Music Quiz Player</h1>
 
-        <div class="team-setup fade-in">
+        <div class="team-setup">
             <h2>チーム登録</h2>
             <input type="text" id="teamName" placeholder="チーム名を入力してください" maxlength="20">
             <button onclick="setTeam()">参加する</button>
@@ -282,16 +256,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        // Firebase config here
         const firebaseConfig = {
-apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
-authDomain: "chat-a1eca.firebaseapp.com",
-databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
-projectId: "chat-a1eca",
-storageBucket: "chat-a1eca.appspot.com",
-messagingSenderId: "872682257719",
-appId: "your-app-id",
-measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+            apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+            authDomain: "chat-a1eca.firebaseapp.com",
+            databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+            projectId: "chat-a1eca",
+            storageBucket: "chat-a1eca.appspot.com",
+            messagingSenderId: "872682257719",
+            appId: "your-app-id",
+            measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
         };
         firebase.initializeApp(firebaseConfig);
 
@@ -307,7 +280,6 @@ measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
             if (teamName) {
                 document.querySelector('.team-setup').classList.add('hidden');
                 document.getElementById('gameArea').classList.remove('hidden');
-                document.getElementById('gameArea').classList.add('fade-in');
                 initializeGameStateListener();
             }
         }
@@ -319,6 +291,9 @@ measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
                 const button = document.createElement('button');
                 button.textContent = item.word;
                 button.className = 'word-button';
+                if (answeredWords.has(item.word)) {
+                    button.classList.add('answered');
+                }
                 button.onclick = () => submitAnswer(item.word, button);
                 container.appendChild(button);
             });
@@ -341,17 +316,12 @@ measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
                 w.word === word && Math.abs(w.timing - currentTime) <= 1);
             
             const resultElement = document.getElementById('result');
-            if (correctWord) {
-                resultElement.innerHTML += `
-                    <div class="fade-in" style="color: #27ae60">
-                        ✓ "${word}" (${currentTime.toFixed(1)}秒)
-                    </div>`;
-            } else {
-                resultElement.innerHTML += `
-                    <div class="fade-in" style="color: #e74c3c">
-                        ✗ "${word}" (${currentTime.toFixed(1)}秒)
-                    </div>`;
-            }
+            const resultItem = document.createElement('div');
+            resultItem.className = `result-item ${correctWord ? 'result-correct' : 'result-incorrect'}`;
+            resultItem.textContent = correctWord 
+                ? `正解！ "${word}" (${currentTime.toFixed(1)}秒)`
+                : `不正解... "${word}" (${currentTime.toFixed(1)}秒)`;
+            resultElement.insertBefore(resultItem, resultElement.firstChild);
         }
 
         function initializeGameStateListener() {
@@ -378,8 +348,8 @@ measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
             db.ref(`songs/${song}`).once('value').then(snapshot => {
                 wordList = snapshot.val() || [];
                 createWordButtons();
-                answeredWords.clear();
                 document.getElementById('result').innerHTML = '';
+                answeredWords.clear();
             });
         }
 
