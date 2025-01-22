@@ -1,8 +1,6 @@
-
-
 <!DOCTYPE html>
-    <meta charset="UTF-8">
 <html>
+    <meta charset="UTF-8">
 <head>
     <title>Quiz Admin</title>
     <style>
@@ -143,12 +141,57 @@
             background: #edf2f7;
         }
 
-        #result {
-            margin-top: 20px;
-            padding: 20px;
+        .answer-list {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .answer-item {
+            padding: 15px;
+            margin: 10px 0;
             background: #f8fafc;
             border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .answer-correct {
+            border-left: 4px solid #2ecc71;
+        }
+
+        .answer-incorrect {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .answer-team {
+            font-weight: 600;
             color: #2c3e50;
+        }
+
+        .answer-time {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .answer-word {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        #currentWord {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f1f8ff;
+            border-radius: 12px;
+            color: #3498db;
+            font-weight: 600;
         }
 
         .input-group {
@@ -184,46 +227,6 @@
                 font-size: 3em;
             }
         }
-
-        .status-indicator {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-
-        .status-running {
-            background: #2ecc71;
-            color: white;
-        }
-
-        .status-stopped {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .song-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .song-icon {
-            font-size: 24px;
-            color: #3498db;
-        }
-
     </style>
 </head>
 <body>
@@ -242,7 +245,7 @@
             <div class="word-input-group">
                 <input type="text" id="word" placeholder="単語">
                 <input type="number" id="timing" placeholder="秒数">
-                <button onclick="addWord()" class="add-word-btn">追加</button>
+                <button onclick="addWord()" class="add-btn">追加</button>
             </div>
 
             <div class="button-group">
@@ -251,29 +254,32 @@
             </div>
 
             <div id="timer">00:00</div>
+            <div id="currentWord"></div>
         </div>
 
         <div class="word-list">
-            <h2>Word List</h2>
+            <h2 class="section-title">Word List</h2>
             <ul id="wordList"></ul>
         </div>
 
-        <div id="result"></div>
+        <div class="answer-list">
+            <h2 class="section-title">回答状況</h2>
+            <div id="answerList"></div>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        // Firebase config here
         const firebaseConfig = {
-apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
-authDomain: "chat-a1eca.firebaseapp.com",
-databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
-projectId: "chat-a1eca",
-storageBucket: "chat-a1eca.appspot.com",
-messagingSenderId: "872682257719",
-appId: "your-app-id",
-measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+            apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+            authDomain: "chat-a1eca.firebaseapp.com",
+            databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+            projectId: "chat-a1eca",
+            storageBucket: "chat-a1eca.appspot.com",
+            messagingSenderId: "872682257719",
+            appId: "your-app-id",
+            measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
         };
         firebase.initializeApp(firebaseConfig);
 
@@ -326,6 +332,7 @@ measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
                 const song = document.getElementById('songSelect').value;
                 startTime = Date.now();
                 isGameRunning = true;
+                document.getElementById('answerList').innerHTML = ''; // リセット
                 db.ref('gameState').set({
                     status: 'playing',
                     startTime: startTime,
@@ -348,6 +355,7 @@ measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
                     currentSong: document.getElementById('songSelect').value
                 });
                 document.getElementById('timer').textContent = '00:00';
+                document.getElementById('currentWord').textContent = '';
             }
         }
 
@@ -366,27 +374,41 @@ measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
         function checkCurrentWords(currentTime) {
             currentWords.forEach(item => {
                 if (Math.abs(currentTime - item.timing) <= 1) {
-                    document.getElementById('result').textContent = 
+                    document.getElementById('currentWord').textContent = 
                         `現在の単語: ${item.word}`;
                 }
             });
         }
 
+        function addAnswerToList(team, word, time, isCorrect) {
+            const answerList = document.getElementById('answerList');
+            const answerDiv = document.createElement('div');
+            answerDiv.className = `answer-item ${isCorrect ? 'answer-correct' : 'answer-incorrect'}`;
+            
+            const timeFormatted = new Date(time * 1000).toISOString().substr(14, 5);
+            
+            answerDiv.innerHTML = `
+                <span class="answer-team">${team}</span>
+                <span class="answer-word">${word}</span>
+                <span class="answer-time">${timeFormatted}</span>
+            `;
+            
+            answerList.insertBefore(answerDiv, answerList.firstChild);
+        }
+
+        // リアルタイムで回答を監視
         db.ref('answers').on('value', snapshot => {
             const answers = snapshot.val();
-            if (answers) {
+            if (answers && isGameRunning) {
                 Object.entries(answers).forEach(([team, teamAnswers]) => {
-                    Object.values(teamAnswers).forEach(answer => {
+                    Object.entries(teamAnswers).forEach(([key, answer]) => {
                         const word = answer.word;
                         const time = answer.time;
                         
                         const correctWord = currentWords.find(w => 
                             w.word === word && Math.abs(w.timing - time) <= 1);
                         
-                        if (correctWord) {
-                            document.getElementById('result').innerHTML += 
-                                `<br>${team}: 正解! (${word} - ${time.toFixed(1)}秒)`;
-                        }
+                        addAnswerToList(team, word, time, !!correctWord);
                     });
                 });
             }
