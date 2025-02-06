@@ -242,9 +242,21 @@ input:checked + .slider::before {
     font-size: 16px;
   }
 }
+
+/* QRコード表示用 */
+#qrcode {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* カメラプレビュー用 */
+#reader {
+  width: 100%;
+  margin: 0 auto;
+}
 </style>
   <!-- html5-qrcodeライブラリ -->
-  <script src="https://unpkg.com/html5-qrcode@2.1.1/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.7/dist/html5-qrcode.min.js"></script>
   <!-- CryptoJSライブラリ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
@@ -345,6 +357,7 @@ input:checked + .slider::before {
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbzAPPCJJHuOw1jCQ5fCORG7cQ--5qUvxyXI0Vr3D_yBa4A9Brb4FwKBPgk_9_oM7Ha8/exec'; // あなたのGASウェブアプリのURL
     var SHARED_SECRET_KEY = '10gmtS5cI_817AGJYV56pMKLXyO_uVKqlrukfggjFgYU'; // user.html と同じ共有鍵
     var scannedUserPhoneNumber = null;
+    var html5QrCode;
 
     // テーマの切り替え
     var themeSwitch = document.getElementById('themeSwitch');
@@ -359,31 +372,48 @@ input:checked + .slider::before {
 
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
+    // ページ読み込み時の処理
+    window.onload = function() {
+      fetchUserData();
+      initQrScanner();
+    }
+
     // QRコードのスキャン処理
     function onScanSuccess(decodedText, decodedResult) {
       // スキャン成功時の処理
-      // 復号化
-      var decryptedData = CryptoJS.AES.decrypt(decodedText, SHARED_SECRET_KEY).toString(CryptoJS.enc.Utf8);
-      scannedUserPhoneNumber = decryptedData;
+      try {
+        // 復号化
+        var bytes = CryptoJS.AES.decrypt(decodedText, SHARED_SECRET_KEY);
+        var decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+        scannedUserPhoneNumber = decryptedData;
 
-      // ユーザー情報を取得
-      fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=getUserByQRCode&encryptedData=' + encodeURIComponent(decodedText)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          document.getElementById('userPhone').textContent = data.user.phoneNumber;
-          document.getElementById('userName').textContent = data.user.name;
-          document.getElementById('userPoints').textContent = data.user.points;
-          document.getElementById('updatePointsInput').value = data.user.points;
-          document.getElementById('userInfoCard').style.display = 'block';
-        } else {
-          alert('ユーザーが見つかりません');
-        }
-      });
+        // ユーザー情報を取得
+        fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'action=getUserByQRCode&encryptedData=' + encodeURIComponent(decodedText)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            document.getElementById('userPhone').textContent = data.user.phoneNumber;
+            document.getElementById('userName').textContent = data.user.name;
+            document.getElementById('userPoints').textContent = data.user.points;
+            document.getElementById('updatePointsInput').value = data.user.points;
+            document.getElementById('userInfoCard').style.display = 'block';
+            // スキャンを停止
+            html5QrCode.stop().then(() => {
+              // 停止成功時の処理（必要に応じて）
+            }).catch(err => {
+              console.error('スキャンの停止に失敗しました', err);
+            });
+          } else {
+            alert('ユーザーが見つかりません');
+          }
+        });
+      } catch (e) {
+        console.error('QRコードの処理中にエラーが発生しました', e);
+      }
     }
 
     function onScanFailure(error) {
@@ -392,10 +422,16 @@ input:checked + .slider::before {
     }
 
     // QRコードリーダーの初期化
-    var html5QrCode = new Html5Qrcode("reader");
-    var config = { fps: 10, qrbox: 250 };
+    function initQrScanner() {
+      html5QrCode = new Html5Qrcode("reader");
+      var config = { fps: 10, qrbox: 250 };
 
-    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+      html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+      .catch(err => {
+        // Start failed, handle it.
+        console.error('QRコードスキャンの開始に失敗しました', err);
+      });
+    }
 
     // ユーザーポイントの更新
     function updateUserPoints() {
@@ -412,6 +448,8 @@ input:checked + .slider::before {
           alert('ポイントを更新しました');
           document.getElementById('userInfoCard').style.display = 'none';
           scannedUserPhoneNumber = null;
+          // スキャンを再開
+          initQrScanner();
         } else {
           alert('ポイントの更新に失敗しました');
         }
@@ -554,11 +592,6 @@ input:checked + .slider::before {
           populateUserTable(filteredUsers);
         }
       });
-    }
-
-    // ページ読み込み時にデータを取得
-    window.onload = function() {
-      fetchUserData();
     }
   </script>
 </body>
