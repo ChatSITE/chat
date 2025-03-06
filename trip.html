@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅行プランナー</title>
+    <!-- Firebase SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-storage-compat.js"></script>
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        /* 全体のスタイル */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        /* ヘッダー */
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* タブナビゲーション */
+        .tabs {
+            display: flex;
+            background-color: white;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 0;
+            color: #777;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .tab i {
+            font-size: 1.5rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .tab.active {
+            color: #2575fc;
+        }
+        
+        /* メインコンテンツ */
+        .main-content {
+            margin-top: 80px;
+            margin-bottom: 70px;
+            padding: 1rem;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        /* アイデアマップのスタイル */
+        .idea-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .idea-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .idea-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .idea-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            background-color: #e9e9e9;
+        }
+        
+        .idea-content {
+            padding: 0.8rem;
+        }
+        
+        .idea-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+        
+        .idea-description {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .idea-link {
+            font-size: 0.8rem;
+            color: #2575fc;
+            display: block;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .idea-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 0.5rem;
+        }
+        
+        .idea-btn {
+            background: none;
+            border: none;
+            color: #777;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.2rem;
+            margin-left: 0.5rem;
+        }
+        
+        .add-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(37, 117, 252, 0.4);
+            cursor: pointer;
+            z-index: 900;
+        }
+        
+        /* スケジュールのスタイル */
+        .date-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .date-selector label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .date-selector input {
+            width: 100%;
+            padding: 0.7rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .schedule-list {
+            margin-top: 1rem;
+        }
+        
+        .schedule-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+        
+        .schedule-time {
+            font-weight: 600;
+            color: #2575fc;
+            margin-bottom: 0.3rem;
+        }
+        
+        .schedule-place {
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+        
+        .schedule-note {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .schedule-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+        }
+        
+        /* モーダルのスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .modal h2 {
+            margin-bottom: 1.5rem;
+            color: #333;
+            font-size: 1.2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(37, 117, 252, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            margin-right: 0.5rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+        
+        /* 画像プレビュー */
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            background-color: #f5f5f5;
+            background-position: center;
+            background-size: cover;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            border: 1px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        /* ローディングスピナー */
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #2575fc;
+            animation: spin 1s ease infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* トースト通知 */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>旅行プランナー</h1>
+            <p>あなたの旅のアイデアを共有しよう</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- アイデアマップセクション -->
+            <div id="ideas-section" class="section active">
+                <div class="idea-grid" id="idea-grid">
+                    <!-- アイデアカードがここに動的に追加されます -->
+                </div>
+                <div class="loading-spinner" id="ideas-loading">
+                    <div class="spinner"></div>
+                    <p>読み込み中...</p>
+                </div>
+            </div>
+            
+            <!-- スケジュールセクション -->
+            <div id="schedule-section" class="section">
+                <div class="date-selector">
+                    <label for="travel-date">旅行日</label>
+                    <input type="date" id="travel-date">
+                </div>
+                <div class="schedule-list" id="schedule-list">
+                    <!-- スケジュールアイテムがここに動的に追加されます -->
+                </div>
+                <div class="loading-spinner" id="schedule-loading">
+                    <div class="spinner"></div>
+                    <p>読み込み中...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- アクションボタン -->
+        <button class="add-btn" id="add-btn">
+            <i class="material-icons">add</i>
+        </button>
+        
+        <!-- タブナビゲーション -->
+        <div class="tabs">
+            <div class="tab active" data-section="ideas-section">
+                <i class="material-icons">map</i>
+                <span>アイデア</span>
+            </div>
+            <div class="tab" data-section="schedule-section">
+                <i class="material-icons">schedule</i>
+                <span>スケジュール</span>
+            </div>
+        </div>
+        
+        <!-- アイデア追加モーダル -->
+        <div class="modal" id="idea-modal">
+            <div class="modal-content">
+                <span class="close-modal" id="close-idea-modal">&times;</span>
+                <h2>場所を追加</h2>
+                <form id="idea-form">
+                    <div class="form-group">
+                        <label for="place-name">場所の名前 *</label>
+                        <input type="text" id="place-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="place-description">説明 *</label>
+                        <textarea id="place-description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="place-url">URL (任意)</label>
+                        <input type="url" id="place-url">
+                    </div>
+                    <div class="form-group">
+                        <label for="place-image">画像 (任意)</label>
+                        <input type="file" id="place-image" accept="image/*">
+                        <div class="image-preview" id="image-preview">画像がここに表示されます</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-idea">キャンセル</button>
+                        <button type="submit" class="btn" id="save-idea">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- スケジュール追加モーダル -->
+        <div class="modal" id="schedule-modal">
+            <div class="modal-content">
+                <span class="close-modal" id="close-schedule-modal">&times;</span>
+                <h2>スケジュールを追加</h2>
+                <form id="schedule-form">
+                    <div class="form-group">
+                        <label for="schedule-time">時間 *</label>
+                        <input type="time" id="schedule-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-place">場所 *</label>
+                        <select id="schedule-place">
+                            <option value="">直接入力</option>
+                            <!-- アイデアの場所がここに動的に追加されます -->
+                        </select>
+                    </div>
+                    <div class="form-group" id="custom-place-group">
+                        <label for="custom-place">場所を入力</label>
+                        <input type="text" id="custom-place">
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-note">メモ (任意)</label>
+                        <textarea id="schedule-note"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-schedule">キャンセル</button>
+                        <button type="submit" class="btn" id="save-schedule">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- トースト通知 -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script>
+        // Firebase設定
+// Firebase設定
+const firebaseConfig = {
+    apiKey: "AIzaSyDvIL9X-qSqsw6i3Rp4TK98uygSfmI0v4A",
+    authDomain: "chat-a1eca.firebaseapp.com",
+    databaseURL: "https://chat-a1eca-default-rtdb.firebaseio.com",
+    projectId: "chat-a1eca",
+    storageBucket: "chat-a1eca.appspot.com",
+    messagingSenderId: "872682257719",
+    appId: "your-app-id",
+    measurementId: "1:872682257719:web:efdf8105ece4e019516eb2"
+};
+
+// Firebase初期化
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const storage = firebase.storage();
+
+// DOM要素
+const ideasSection = document.getElementById('ideas-section');
+const scheduleSection = document.getElementById('schedule-section');
+const addBtn = document.getElementById('add-btn');
+const tabs = document.querySelectorAll('.tab');
+const ideaModal = document.getElementById('idea-modal');
+const scheduleModal = document.getElementById('schedule-modal');
+const closeIdeaModal = document.getElementById('close-idea-modal');
+const closeScheduleModal = document.getElementById('close-schedule-modal');
+const ideaForm = document.getElementById('idea-form');
+const scheduleForm = document.getElementById('schedule-form');
+const cancelIdea = document.getElementById('cancel-idea');
+const cancelSchedule = document.getElementById('cancel-schedule');
+const ideaGrid = document.getElementById('idea-grid');
+const scheduleList = document.getElementById('schedule-list');
+const travelDate = document.getElementById('travel-date');
+const schedulePlaceSelect = document.getElementById('schedule-place');
+const customPlaceGroup = document.getElementById('custom-place-group');
+const customPlace = document.getElementById('custom-place');
+const toast = document.getElementById('toast');
+const imagePreview = document.getElementById('image-preview');
+const placeImage = document.getElementById('place-image');
+const ideasLoading = document.getElementById('ideas-loading');
+const scheduleLoading = document.getElementById('schedule-loading');
+
+// 現在のプランID - 固定値に設定 (毎回新規作成されるのを防ぐ)
+const planId = 'travel-plan-fixed-id';
+
+// トースト通知を表示する関数
+function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// 画像プレビュー処理
+placeImage.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            imagePreview.style.backgroundImage = `url(${event.target.result})`;
+            imagePreview.textContent = '';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        imagePreview.style.backgroundImage = '';
+        imagePreview.textContent = '画像がここに表示されます';
+    }
+});
+
+// タブ切り替え
+tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+        const targetSection = this.getAttribute('data-section');
+        
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(targetSection).classList.add('active');
+        
+        // スケジュールタブの場合、アイデアリストを読み込む
+        if (targetSection === 'schedule-section') {
+            loadIdeasForSchedule();
+            loadSchedules();
+        } else if (targetSection === 'ideas-section') {
+            loadIdeas();
+        }
+        
+        // 追加ボタンの処理を変更
+        if (targetSection === 'ideas-section') {
+            addBtn.onclick = openIdeaModal;
+        } else {
+            addBtn.onclick = openScheduleModal;
+        }
+    });
+});
+
+// 初期設定
+function init() {
+    // 現在の日付をセット
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    travelDate.value = formattedDate;
+    
+    // 追加ボタンの初期設定
+    addBtn.onclick = openIdeaModal;
+    
+    // スケジュール場所選択リスナー
+    schedulePlaceSelect.addEventListener('change', function() {
+        if (this.value === '') {
+            customPlaceGroup.style.display = 'block';
+        } else {
+            customPlaceGroup.style.display = 'none';
+        }
+    });
+    
+    // トラベル日付変更リスナー
+    travelDate.addEventListener('change', function() {
+        loadSchedules();
+    });
+    
+    // データ読み込み
+    loadIdeas();
+    loadSchedules();
+}
+
+// アイデアマップの読み込み
+function loadIdeas() {
+    ideasLoading.style.display = 'block';
+    ideaGrid.innerHTML = '';
+    
+    const ideasRef = database.ref(`plans/${planId}/ideas`);
+    
+    // .on ではなく .once を使用して一度だけデータを取得
+    ideasRef.once('value')
+        .then(snapshot => {
+            ideasLoading.style.display = 'none';
+            ideaGrid.innerHTML = '';
+            
+            if (snapshot.exists()) {
+                const ideas = snapshot.val();
+                
+                // 各アイデアを表示
+                Object.keys(ideas).forEach(key => {
+                    const idea = ideas[key];
+                    const card = createIdeaCard(key, idea);
+                    ideaGrid.appendChild(card);
+                });
+            } else {
+                // アイデアがない場合
+                const emptyMessage = document.createElement('p');
+                emptyMessage.textContent = 'アイデアを追加してみましょう！';
+                emptyMessage.style.textAlign = 'center';
+                emptyMessage.style.gridColumn = '1 / -1';
+                emptyMessage.style.padding = '2rem';
+                emptyMessage.style.color = '#777';
+                ideaGrid.appendChild(emptyMessage);
+            }
+        })
+        .catch(error => {
+            console.error("データ読み込みエラー:", error);
+            showToast('データの読み込みに失敗しました');
+            ideasLoading.style.display = 'none';
+        });
+}
+
+// スケジュールの読み込み
+function loadSchedules() {
+    scheduleLoading.style.display = 'block';
+    scheduleList.innerHTML = '';
+    
+    const date = travelDate.value;
+    if (!date) return;
+    
+    const schedulesRef = database.ref(`plans/${planId}/schedules/${date}`);
+    
+    // .on ではなく .once を使用して一度だけデータを取得
+    schedulesRef.once('value')
+        .then(snapshot => {
+            scheduleLoading.style.display = 'none';
+            scheduleList.innerHTML = '';
+            
+            if (snapshot.exists()) {
+                const schedules = snapshot.val();
+                
+                // 時間順にソート
+                const sortedKeys = Object.keys(schedules).sort((a, b) => {
+                    return schedules[a].time.localeCompare(schedules[b].time);
+                });
+                
+                // 各スケジュールを表示
+                sortedKeys.forEach(key => {
+                    const schedule = schedules[key];
+                    const item = createScheduleItem(key, schedule);
+                    scheduleList.appendChild(item);
+                });
+            } else {
+                // スケジュールがない場合
+                const emptyMessage = document.createElement('p');
+                emptyMessage.textContent = 'スケジュールを追加してみましょう！';
+                emptyMessage.style.textAlign = 'center';
+                emptyMessage.style.padding = '2rem';
+                emptyMessage.style.color = '#777';
+                scheduleList.appendChild(emptyMessage);
+            }
+        })
+        .catch(error => {
+            console.error("スケジュール読み込みエラー:", error);
+            showToast('スケジュールの読み込みに失敗しました');
+            scheduleLoading.style.display = 'none';
+        });
+}
+
+// スケジュール用のアイデアリスト読み込み
+function loadIdeasForSchedule() {
+    schedulePlaceSelect.innerHTML = '<option value="">直接入力</option>';
+    
+    const ideasRef = database.ref(`plans/${planId}/ideas`);
+    ideasRef.once('value')
+        .then(snapshot => {
+            if (snapshot.exists()) {
+                const ideas = snapshot.val();
+                
+                // 各アイデアをセレクトボックスに追加
+                Object.keys(ideas).forEach(key => {
+                    const idea = ideas[key];
+                    const option = document.createElement('option');
+                    option.value = idea.name;
+                    option.textContent = idea.name;
+                    schedulePlaceSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error("アイデアリスト読み込みエラー:", error);
+        });
+}
+
+// アイデアカードを作成する関数
+function createIdeaCard(id, idea) {
+    const card = document.createElement('div');
+    card.className = 'idea-card';
+    
+    let imageHtml = `<div class="idea-image" style="background-color: #e9e9e9; display: flex; align-items: center; justify-content: center;">
+                      <i class="material-icons" style="font-size: 2rem; color: #ccc;">place</i>
+                  </div>`;
+    
+    if (idea.imageUrl) {
+        imageHtml = `<img src="${idea.imageUrl}" alt="${idea.name}" class="idea-image">`;
+    }
+    
+    card.innerHTML = `
+        ${imageHtml}
+        <div class="idea-content">
+            <h3 class="idea-title">${idea.name}</h3>
+            <p class="idea-description">${idea.description}</p>
+            ${idea.url ? `<a href="${idea.url}" target="_blank" class="idea-link">${idea.url}</a>` : ''}
+            <div class="idea-actions">
+                <button class="idea-btn edit-idea" data-id="${id}"><i class="material-icons">edit</i></button>
+                <button class="idea-btn delete-idea" data-id="${id}"><i class="material-icons">delete</i></button>
+            </div>
+        </div>
+    `;
+    
+    // 編集ボタンのリスナー
+    card.querySelector('.edit-idea').addEventListener('click', function() {
+        const ideaId = this.getAttribute('data-id');
+        editIdea(ideaId);
+    });
+    
+    // 削除ボタンのリスナー
+    card.querySelector('.delete-idea').addEventListener('click', function() {
+        const ideaId = this.getAttribute('data-id');
+        if (confirm('このアイデアを削除しますか？')) {
+            deleteIdea(ideaId);
+        }
+    });
+    
+    return card;
+}
+
+// スケジュールアイテムを作成する関数
+function createScheduleItem(id, schedule) {
+    const item = document.createElement('div');
+    item.className = 'schedule-item';
+    
+    // 時間表示を整形（例: 14:00）
+    const timeDisplay = schedule.time;
+    
+    item.innerHTML = `
+        <div class="schedule-time">${timeDisplay}</div>
+        <div class="schedule-place">${schedule.place}</div>
+        ${schedule.note ? `<div class="schedule-note">${schedule.note}</div>` : ''}
+        <div class="schedule-actions">
+            <button class="idea-btn edit-schedule" data-id="${id}"><i class="material-icons">edit</i></button>
+            <button class="idea-btn delete-schedule" data-id="${id}"><i class="material-icons">delete</i></button>
+        </div>
+    `;
+    
+    // 編集ボタンのリスナー
+    item.querySelector('.edit-schedule').addEventListener('click', function() {
+        const scheduleId = this.getAttribute('data-id');
+        editSchedule(scheduleId);
+    });
+    
+    // 削除ボタンのリスナー
+    item.querySelector('.delete-schedule').addEventListener('click', function() {
+        const scheduleId = this.getAttribute('data-id');
+        if (confirm('このスケジュールを削除しますか？')) {
+            deleteSchedule(scheduleId);
+        }
+    });
+    
+    return item;
+}
+
+// アイデアモーダルを開く
+function openIdeaModal() {
+    ideaForm.reset();
+    imagePreview.style.backgroundImage = '';
+    imagePreview.textContent = '画像がここに表示されます';
+    ideaModal.style.display = 'block';
+    
+    // 現在編集中のアイデアIDをクリア
+    ideaForm.removeAttribute('data-edit-id');
+}
+
+// スケジュールモーダルを開く
+function openScheduleModal() {
+    scheduleForm.reset();
+    scheduleModal.style.display = 'block';
+    
+    // 場所選択の表示設定
+    schedulePlaceSelect.value = '';
+    customPlaceGroup.style.display = 'block';
+    
+    // 現在編集中のスケジュールIDをクリア
+    scheduleForm.removeAttribute('data-edit-id');
+}
+
+// アイデアを編集する
+function editIdea(ideaId) {
+    const ideaRef = database.ref(`plans/${planId}/ideas/${ideaId}`);
+    
+    ideaRef.once('value').then(snapshot => {
+        if (snapshot.exists()) {
+            const idea = snapshot.val();
+            
+            // フォームに値をセット
+            document.getElementById('place-name').value = idea.name;
+            document.getElementById('place-description').value = idea.description;
+            document.getElementById('place-url').value = idea.url || '';
+            
+            // 画像プレビュー
+            if (idea.imageUrl) {
+                imagePreview.style.backgroundImage = `url(${idea.imageUrl})`;
+                imagePreview.textContent = '';
+            } else {
+                imagePreview.style.backgroundImage = '';
+                imagePreview.textContent = '画像がここに表示されます';
+            }
+            
+            // 編集中のIDをセット
+            ideaForm.setAttribute('data-edit-id', ideaId);
+            
+            // モーダルを開く
+            ideaModal.style.display = 'block';
+        }
+    }).catch(error => {
+        console.error("アイデア取得エラー:", error);
+        showToast('データの取得に失敗しました');
+    });
+}
+
+// スケジュールを編集する
+function editSchedule(scheduleId) {
+    const date = travelDate.value;
+    const scheduleRef = database.ref(`plans/${planId}/schedules/${date}/${scheduleId}`);
+    
+    scheduleRef.once('value').then(snapshot => {
+        if (snapshot.exists()) {
+            const schedule = snapshot.val();
+            
+            // フォームに値をセット
+            document.getElementById('schedule-time').value = schedule.time;
+            
+            // 場所の選択
+            const placeSelectValue = schedule.place;
+            let placeFound = false;
+            
+            // セレクトボックスの選択肢をチェック
+            for (let i = 0; i < schedulePlaceSelect.options.length; i++) {
+                if (schedulePlaceSelect.options[i].value === placeSelectValue) {
+                    schedulePlaceSelect.selectedIndex = i;
+                    placeFound = true;
+                    break;
+                }
+            }
+            
+            // 選択肢がなければ直接入力
+            if (!placeFound) {
+                schedulePlaceSelect.value = '';
+                customPlace.value = schedule.place;
+                customPlaceGroup.style.display = 'block';
+            } else {
+                customPlaceGroup.style.display = 'none';
+            }
+            
+            document.getElementById('schedule-note').value = schedule.note || '';
+            
+            // 編集中のIDをセット
+            scheduleForm.setAttribute('data-edit-id', scheduleId);
+            
+            // モーダルを開く
+            scheduleModal.style.display = 'block';
+        }
+    }).catch(error => {
+        console.error("スケジュール取得エラー:", error);
+        showToast('データの取得に失敗しました');
+    });
+}
+
+// アイデアを削除する
+function deleteIdea(ideaId) {
+    // 画像が存在する場合は削除
+    database.ref(`plans/${planId}/ideas/${ideaId}`).once('value').then(snapshot => {
+        if (snapshot.exists() && snapshot.val().imageUrl) {
+            const imageUrl = snapshot.val().imageUrl;
+            const imageRef = storage.refFromURL(imageUrl);
+            imageRef.delete().catch(error => {
+                console.error("画像の削除エラー:", error);
+            });
+        }
+        
+        // アイデアを削除
+        database.ref(`plans/${planId}/ideas/${ideaId}`).remove().then(() => {
+            showToast('アイデアを削除しました');
+            // 削除後にリストを再読み込み
+            loadIdeas();
+        }).catch(error => {
+            console.error("アイデアの削除エラー:", error);
+            showToast('エラーが発生しました');
+        });
+    });
+}
+
+// スケジュールを削除する
+function deleteSchedule(scheduleId) {
+    const date = travelDate.value;
+    database.ref(`plans/${planId}/schedules/${date}/${scheduleId}`).remove().then(() => {
+        showToast('スケジュールを削除しました');
+        // 削除後にリストを再読み込み
+        loadSchedules();
+    }).catch(error => {
+        console.error("スケジュールの削除エラー:", error);
+        showToast('エラーが発生しました');
+    });
+}
+
+// アイデアフォームの送信処理
+ideaForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('place-name').value.trim();
+    const description = document.getElementById('place-description').value.trim();
+    const url = document.getElementById('place-url').value.trim();
+    const imageFile = document.getElementById('place-image').files[0];
+    
+    // 編集モードか新規追加モードか
+    const editId = this.getAttribute('data-edit-id');
+    
+    // バリデーション
+    if (!name || !description) {
+        showToast('必須項目を入力してください');
+        return;
+    }
+    
+    // データオブジェクト
+    const ideaData = {
+        name,
+        description,
+        url: url || null
+    };
+    
+    // 画像のアップロード処理
+    if (imageFile) {
+        // ローディング表示
+        showToast('画像をアップロード中...');
+        
+        const imageRef = storage.ref(`plans/${planId}/images/${new Date().getTime()}_${imageFile.name}`);
+        const uploadTask = imageRef.put(imageFile);
+        
+        uploadTask.on('state_changed', 
+            null, 
+            error => {
+                console.error("画像のアップロードエラー:", error);
+                showToast('画像のアップロードに失敗しました');
+            }, 
+            () => {
+                // アップロード完了後、URLを取得してデータを保存
+                uploadTask.snapshot.ref.getDownloadURL().then(downloadURL => {
+                    ideaData.imageUrl = downloadURL;
+                    saveIdeaData(editId, ideaData);
+                });
+            }
+        );
+    } else {
+        // 既存の画像がある場合はそのまま保持する（編集の場合）
+        if (editId) {
+            database.ref(`plans/${planId}/ideas/${editId}`).once('value').then(snapshot => {
+                if (snapshot.exists() && snapshot.val().imageUrl) {
+                    ideaData.imageUrl = snapshot.val().imageUrl;
+                }
+                saveIdeaData(editId, ideaData);
+            });
+        } else {
+            saveIdeaData(editId, ideaData);
+        }
+    }
+});
+
+// アイデアデータを保存する関数
+function saveIdeaData(editId, ideaData) {
+    let savePromise;
+    
+    if (editId) {
+        // 編集モード
+        savePromise = database.ref(`plans/${planId}/ideas/${editId}`).update(ideaData);
+    } else {
+        // 新規追加モード
+        savePromise = database.ref(`plans/${planId}/ideas`).push(ideaData);
+    }
+    
+    savePromise.then(() => {
+        ideaModal.style.display = 'none';
+        showToast(editId ? 'アイデアを更新しました' : 'アイデアを追加しました');
+        // 保存後にリストを再読み込み
+        loadIdeas();
+    }).catch(error => {
+        console.error("データ保存エラー:", error);
+        showToast('エラーが発生しました');
+    });
+}
+
+// スケジュールフォームの送信処理
+scheduleForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const time = document.getElementById('schedule-time').value;
+    const selectedPlace = document.getElementById('schedule-place').value;
+    const customPlaceValue = document.getElementById('custom-place').value.trim();
+    const note = document.getElementById('schedule-note').value.trim();
+    
+    // 場所の決定
+    let place = selectedPlace;
+    if (selectedPlace === '') {
+        place = customPlaceValue;
+    }
+    
+    // バリデーション
+    if (!time || !place) {
+        showToast('必須項目を入力してください');
+        return;
+    }
+    
+    // 編集モードか新規追加モードか
+    const editId = this.getAttribute('data-edit-id');
+    
+    // データオブジェクト
+    const scheduleData = {
+        time,
+        place,
+        note: note || null
+    };
+    
+    const date = travelDate.value;
+    let savePromise;
+    
+    if (editId) {
+        // 編集モード
+        savePromise = database.ref(`plans/${planId}/schedules/${date}/${editId}`).update(scheduleData);
+    } else {
+        // 新規追加モード
+        savePromise = database.ref(`plans/${planId}/schedules/${date}`).push(scheduleData);
+    }
+    
+    savePromise.then(() => {
+        scheduleModal.style.display = 'none';
+        showToast(editId ? 'スケジュールを更新しました' : 'スケジュールを追加しました');
+        // 保存後にリストを再読み込み
+        loadSchedules();
+    }).catch(error => {
+        console.error("データ保存エラー:", error);
+        showToast('エラーが発生しました');
+    });
+});
+
+// モーダルを閉じる処理
+closeIdeaModal.addEventListener('click', () => {
+    ideaModal.style.display = 'none';
+});
+
+closeScheduleModal.addEventListener('click', () => {
+    scheduleModal.style.display = 'none';
+});
+
+cancelIdea.addEventListener('click', () => {
+    ideaModal.style.display = 'none';
+});
+
+cancelSchedule.addEventListener('click', () => {
+    scheduleModal.style.display = 'none';
+});
+
+// モーダル外クリックで閉じる
+window.addEventListener('click', function(e) {
+    if (e.target === ideaModal) {
+        ideaModal.style.display = 'none';
+    }
+    if (e.target === scheduleModal) {
+        scheduleModal.style.display = 'none';
+    }
+});
+
+// アプリの初期化
+init();
+
+// 定期的にデータを更新する
+setInterval(() => {
+    const activeSection = document.querySelector('.section.active');
+    if (activeSection.id === 'ideas-section') {
+        loadIdeas();
+    } else if (activeSection.id === 'schedule-section') {
+        loadSchedules();
+    }
+}, 30000); // 30秒ごとに更新
+    </script>
+</body>
+</html>
