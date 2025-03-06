@@ -255,7 +255,7 @@
       <input type="text" id="input-share-code" placeholder="共有コードを入力">
       <button id="submit-share-code-btn">参加する</button>
     </div>
-    <!-- ユーザー自身の過去プラン一覧 -->
+    <!-- ユーザー自身の作成・参加済みプラン一覧 -->
     <div id="user-plan-list" class="plan-list"></div>
   </div>
   
@@ -266,7 +266,7 @@
       <p>あなたの旅のアイデアを共有しよう</p>
       <p style="font-size: 0.8rem;">プラン共有コード: <span id="display-share-code"></span></p>
       <button id="copy-share-code-btn" style="font-size:0.8rem; padding:0.3rem 0.6rem;">コピー</button>
-      <button class="profile-btn" id="profile-btn">プロフィール</button>
+      <button class="profile-btn" id="profile-btn">P</button>
     </header>
     
     <div class="main-content">
@@ -528,35 +528,48 @@
       displayShareCode.textContent = planId;
     }
     
-    /* ユーザー作成プラン一覧の読み込み */
+    /* ユーザー作成プランと参加済みプランの読み込み */
     function loadUserPlans() {
-      database.ref(`users/${currentUser.uid}/plans`).once('value')
-        .then(snapshot => {
-          userPlanList.innerHTML = '';
-          if (snapshot.exists()) {
-            const plans = snapshot.val();
-            Object.keys(plans).forEach(key => {
-              const plan = plans[key];
-              const div = document.createElement('div');
-              div.className = 'plan-item';
-              div.textContent = plan.planName + ' (' + key + ')';
-              div.addEventListener('click', () => {
-                planId = key;
-                displayShareCode.textContent = planId;
-                planSelection.style.display = 'none';
-                appContainer.style.display = 'block';
-                initApp();
-              });
-              userPlanList.appendChild(div);
+      userPlanList.innerHTML = '';
+      // 作成済みプラン
+      const createdRef = database.ref(`users/${currentUser.uid}/plans`);
+      // 参加済みプラン
+      const joinedRef = database.ref(`users/${currentUser.uid}/joinedPlans`);
+      
+      Promise.all([
+        createdRef.once('value'),
+        joinedRef.once('value')
+      ]).then(([createdSnapshot, joinedSnapshot]) => {
+        const plans = {};
+        if (createdSnapshot.exists()) {
+          Object.assign(plans, createdSnapshot.val());
+        }
+        if (joinedSnapshot.exists()) {
+          Object.assign(plans, joinedSnapshot.val());
+        }
+        // 表示用に一覧を作成
+        if (Object.keys(plans).length > 0) {
+          Object.keys(plans).forEach(key => {
+            const plan = plans[key];
+            const div = document.createElement('div');
+            div.className = 'plan-item';
+            div.textContent = plan.planName + ' (' + key + ')';
+            div.addEventListener('click', () => {
+              planId = key;
+              displayShareCode.textContent = planId;
+              planSelection.style.display = 'none';
+              appContainer.style.display = 'block';
+              initApp();
             });
-          } else {
-            userPlanList.innerHTML = '<p>作成済みのプランはありません</p>';
-          }
-        })
-        .catch(error => {
-          console.error("ユーザープラン読み込みエラー:", error);
-          showToast('プランの読み込みに失敗しました');
-        });
+            userPlanList.appendChild(div);
+          });
+        } else {
+          userPlanList.innerHTML = '<p>作成済み・参加済みのプランはありません</p>';
+        }
+      }).catch(error => {
+        console.error("ユーザープラン読み込みエラー:", error);
+        showToast('プランの読み込みに失敗しました');
+      });
     }
     
     /* アイデアの読み込み */
@@ -983,9 +996,20 @@
           if (snapshot.exists()) {
             planId = code;
             displayShareCode.textContent = planId;
-            planSelection.style.display = 'none';
-            appContainer.style.display = 'block';
-            initApp();
+            // 参加済みプランとしてユーザーに登録（既に作成プランでなければ）
+            database.ref(`users/${currentUser.uid}/plans/${planId}`).once('value')
+              .then(snap => {
+                if (!snap.exists()) {
+                  // 作成済みでなければ joinedPlans に登録
+                  const meta = snapshot.val();
+                  return database.ref(`users/${currentUser.uid}/joinedPlans/${planId}`).set({ planName: meta.planName });
+                }
+              })
+              .then(() => {
+                planSelection.style.display = 'none';
+                appContainer.style.display = 'block';
+                initApp();
+              });
           } else {
             showToast('存在しない共有コードです');
           }
