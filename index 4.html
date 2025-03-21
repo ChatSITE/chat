@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リアルタイムテキスト通話</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+    <!-- ログイン画面 -->
+    <div id="login-screen" class="screen">
+        <div class="container">
+            <h1>リアルタイムチャット</h1>
+            <div class="login-container">
+                <h2>ログイン</h2>
+                <button id="google-login" class="btn primary-btn">Googleでログイン</button>
+                <div class="divider">または</div>
+                <form id="email-login-form">
+                    <input type="email" id="login-email" placeholder="メールアドレス" required>
+                    <input type="password" id="login-password" placeholder="パスワード" required>
+                    <button type="submit" class="btn primary-btn">ログイン</button>
+                </form>
+                <p>アカウントをお持ちでない場合 <a href="#" id="show-signup">新規登録</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新規登録画面 -->
+    <div id="signup-screen" class="screen hidden">
+        <div class="container">
+            <h1>アカウント作成</h1>
+            <form id="signup-form">
+                <input type="text" id="signup-username" placeholder="ユーザーネーム" required>
+                <input type="email" id="signup-email" placeholder="メールアドレス" required>
+                <input type="password" id="signup-password" placeholder="パスワード" required>
+                <div class="profile-upload">
+                    <label for="profile-image">プロフィール画像</label>
+                    <input type="file" id="profile-image" accept="image/*">
+                    <div id="image-preview"></div>
+                </div>
+                <button type="submit" class="btn primary-btn">登録</button>
+            </form>
+            <p>すでにアカウントをお持ちの場合 <a href="#" id="show-login">ログイン</a></p>
+        </div>
+    </div>
+
+    <!-- ホーム画面 -->
+    <div id="home-screen" class="screen hidden">
+        <div class="container">
+            <div class="header">
+                <div class="user-info">
+                    <img id="user-avatar" src="avatar-placeholder.png" alt="プロフィール">
+                    <span id="user-name">ユーザー名</span>
+                </div>
+                <div class="nav-tabs">
+                    <button class="tab active" data-tab="rooms">ルーム</button>
+                    <button class="tab" data-tab="friends">フレンド</button>
+                    <button class="tab" data-tab="requests">申請</button>
+                    <button class="tab" data-tab="profile">プロフィール</button>
+                </div>
+            </div>
+
+            <div id="rooms-tab" class="tab-content">
+                <div class="action-buttons">
+                    <button id="create-room-btn" class="btn primary-btn">新規ルーム作成</button>
+                    <button id="join-room-btn" class="btn secondary-btn">招待コードで参加</button>
+                </div>
+                <h3>参加中のルーム</h3>
+                <div id="room-list" class="list-container">
+                    <!-- ルームリストがここに表示されます -->
+                </div>
+            </div>
+
+            <div id="friends-tab" class="tab-content hidden">
+                <h3>フレンド</h3>
+                <div id="friends-list" class="list-container">
+                    <!-- フレンドリストがここに表示されます -->
+                </div>
+            </div>
+
+            <div id="requests-tab" class="tab-content hidden">
+                <h3>フレンド申請</h3>
+                <div id="friend-requests" class="list-container">
+                    <!-- フレンド申請がここに表示されます -->
+                </div>
+            </div>
+
+            <div id="profile-tab" class="tab-content hidden">
+                <h3>プロフィール設定</h3>
+                <form id="profile-form">
+                    <div class="profile-upload large">
+                        <img id="current-avatar" src="avatar-placeholder.png" alt="プロフィール画像">
+                        <input type="file" id="update-profile-image" accept="image/*">
+                    </div>
+                    <input type="text" id="update-username" placeholder="ユーザーネーム">
+                    <button type="submit" class="btn primary-btn">更新</button>
+                </form>
+                <button id="logout-btn" class="btn danger-btn">ログアウト</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新規ルーム作成モーダル -->
+    <div id="createRoom-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>新規ルーム作成</h3>
+            <form id="create-room-form">
+                <input type="text" id="room-name" placeholder="ルーム名" required>
+                <button type="submit" class="btn primary-btn">作成</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ルーム参加モーダル -->
+    <div id="join-room-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>招待コードでルームに参加</h3>
+            <form id="join-room-form">
+                <input type="text" id="room-code" placeholder="招待コード" required>
+                <button type="submit" class="btn primary-btn">参加</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- チャットルーム画面 -->
+    <div id="chat-screen" class="screen hidden">
+        <div class="chat-container">
+            <div class="chat-header">
+                <button id="back-to-home" class="back-btn">←</button>
+                <h2 id="room-title">ルーム名</h2>
+                <div class="room-info">
+                    <span id="room-code-display"></span>
+                    <button id="copy-invite-code" class="btn small-btn">コピー</button>
+                </div>
+            </div>
+            
+            <div class="participants-container">
+                <div id="participants-list" class="participants">
+                    <!-- 参加者がここに表示されます -->
+                </div>
+            </div>
+
+            <div id="chat-messages" class="messages-container">
+                <!-- メッセージがここに表示されます -->
+            </div>
+
+            <div class="typing-indicator hidden" id="typing-indicator">
+                <span class="typing-user">ユーザー</span>が入力中...
+            </div>
+
+            <div class="input-container">
+                <textarea id="message-input" placeholder="メッセージを入力" rows="1"></textarea>
+                <button id="send-btn" disabled>送信</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ユーザープロフィールモーダル -->
+    <div id="user-profile-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="user-profile-content">
+                <img id="modal-user-avatar" src="avatar-placeholder.png" alt="プロフィール画像">
+                <h3 id="modal-user-name">ユーザー名</h3>
+                <div class="friend-actions">
+                    <button id="send-friend-request" class="btn primary-btn">フレンド申請</button>
+                    <button id="invite-to-chat" class="btn secondary-btn hidden">チャットに招待</button>
+                    <button id="remove-friend" class="btn danger-btn hidden">フレンド解除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    
+    <!-- アプリスクリプト -->
+    <script src="app.js"></script>
+</body>
+</html>
