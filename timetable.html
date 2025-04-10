@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大学時間割作成ツール</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            table-layout: fixed;
+        }
+        .timetable th, .timetable td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: center;
+            position: relative;
+            word-break: break-word;
+        }
+        .timetable th {
+            background-color: #3498db;
+            color: white;
+            font-size: 0.9rem;
+        }
+        .timetable td {
+            height: 90px;
+            vertical-align: top;
+        }
+        .period-col {
+            width: 40px;
+        }
+        .day-col {
+            width: 20%;
+        }
+        .timetable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .class-cell {
+            cursor: pointer;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-size: 0.9rem;
+        }
+        .class-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+            font-size: 0.9rem;
+            line-height: 1.2;
+        }
+        .class-info {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            margin-bottom: 2px;
+            line-height: 1.1;
+        }
+        .room-info {
+            font-size: 0.75rem;
+            background-color: #f0f7ff;
+            border-radius: 3px;
+            padding: 1px 3px;
+            display: inline-block;
+            margin-top: 2px;
+            line-height: 1.1;
+        }
+        .required {
+            color: #e74c3c;
+        }
+        .elective {
+            color: #27ae60;
+        }
+        .form-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            width: 90%;
+            max-width: 350px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 900;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .save-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .cancel-btn {
+            background-color: #95a5a6;
+            color: white;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #edf2f7;
+            border-radius: 8px;
+        }
+        .summary h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-size: 1.3rem;
+        }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .stat-box {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .stat-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #3498db;
+            font-size: 0.9rem;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+        .action-btn {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .alert {
+            padding: 10px;
+            background-color: #d4edda;
+            color: #155724;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        /* モバイル向け最適化 */
+        @media (max-width: 600px) {
+            body {
+                padding: 5px;
+            }
+            .container {
+                padding: 10px;
+            }
+            .timetable th, .timetable td {
+                padding: 3px;
+            }
+            .period-col {
+                width: 30px;
+            }
+            .class-name {
+                font-size: 0.8rem;
+            }
+            .class-info, .room-info {
+                font-size: 0.7rem;
+            }
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+            .summary h2 {
+                font-size: 1.2rem;
+            }
+            .stat-box {
+                min-width: 120px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>大学時間割作成ツール</h1>
+    
+    <div class="container">
+        <div id="alert" class="alert"></div>
+        
+        <div class="action-buttons">
+            <button id="saveToStorage" class="action-btn">データを保存</button>
+            <button id="clearStorage" class="action-btn">データをリセット</button>
+        </div>
+        
+        <table class="timetable" id="timetable">
+            <thead>
+                <tr>
+                    <th class="period-col">時限</th>
+                    <th class="day-col">月</th>
+                    <th class="day-col">火</th>
+                    <th class="day-col">水</th>
+                    <th class="day-col">木</th>
+                    <th class="day-col">金</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 1-5限の行を生成 -->
+            </tbody>
+        </table>
+        
+        <div class="summary">
+            <h2>履修状況サマリー</h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-title">総単位数</div>
+                    <div id="total-credits">0 単位</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">必修/選択</div>
+                    <div id="required-elective">必修: 0 / 選択: 0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">カテゴリー別</div>
+                    <div id="category-stats"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 授業登録フォーム -->
+    <div class="overlay" id="overlay"></div>
+    <div class="form-container" id="classForm">
+        <h3>授業を登録</h3>
+        <input type="hidden" id="day" value="">
+        <input type="hidden" id="period" value="">
+        
+        <div class="form-group">
+            <label for="className">授業名</label>
+            <input type="text" id="className" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="roomName">教室</label>
+            <input type="text" id="roomName" placeholder="例: A101">
+        </div>
+        
+        <div class="form-group">
+            <label for="credits">単位数</label>
+            <input type="number" id="credits" min="1" max="5" value="2" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="category">カテゴリー</label>
+            <select id="category" required>
+                <option value="一般教養">一般教養</option>
+                <option value="専門科目">専門科目</option>
+                <option value="語学">語学</option>
+                <option value="実習">実習</option>
+                <option value="その他">その他</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="type">種別</label>
+            <select id="type" required>
+                <option value="必修">必修</option>
+                <option value="選択">選択</option>
+            </select>
+        </div>
+        
+        <div class="button-group">
+            <button class="save-btn" id="saveBtn">保存</button>
+            <button class="delete-btn" id="deleteBtn">削除</button>
+            <button class="cancel-btn" id="cancelBtn">キャンセル</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 時間割テーブルの初期化
+            const tbody = document.querySelector('#timetable tbody');
+            const days = ['月', '火', '水', '木', '金'];
+            const alertEl = document.getElementById('alert');
+            
+            // 各時限の行を作成
+            for (let period = 1; period <= 5; period++) {
+                const row = document.createElement('tr');
+                
+                // 時限セル
+                const periodCell = document.createElement('th');
+                periodCell.textContent = period + '限';
+                periodCell.className = 'period-col';
+                row.appendChild(periodCell);
+                
+                // 各曜日のセルを作成
+                for (let i = 0; i < days.length; i++) {
+                    const cell = document.createElement('td');
+                    cell.dataset.day = days[i];
+                    cell.dataset.period = period;
+                    cell.className = 'day-col';
+                    cell.addEventListener('click', openClassForm);
+                    row.appendChild(cell);
+                }
+                
+                tbody.appendChild(row);
+            }
+            
+            // 授業データの保存用
+            let classData = {};
+            
+            // ローカルストレージから読み込み
+            loadFromLocalStorage();
+            
+            // フォーム関連の要素
+            const overlay = document.getElementById('overlay');
+            const classForm = document.getElementById('classForm');
+            const saveBtn = document.getElementById('saveBtn');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const saveToStorageBtn = document.getElementById('saveToStorage');
+            const clearStorageBtn = document.getElementById('clearStorage');
+            
+            // ローカルストレージへの保存ボタン
+            saveToStorageBtn.addEventListener('click', function() {
+                saveToLocalStorage();
+                showAlert('時間割データを保存しました', 'success');
+            });
+            
+            // ローカルストレージのクリアボタン
+            clearStorageBtn.addEventListener('click', function() {
+                if (confirm('本当に時間割データをリセットしますか？')) {
+                    localStorage.removeItem('timetableData');
+                    classData = {};
+                    updateTimetable();
+                    updateStats();
+                    showAlert('時間割データをリセットしました', 'warning');
+                }
+            });
+            
+            // フォームを開く
+            function openClassForm(e) {
+                const day = e.currentTarget.dataset.day;
+                const period = e.currentTarget.dataset.period;
+                
+                document.getElementById('day').value = day;
+                document.getElementById('period').value = period;
+                
+                // 既存の授業データがあれば読み込む
+                const key = `${day}_${period}`;
+                if (classData[key]) {
+                    document.getElementById('className').value = classData[key].name;
+                    document.getElementById('roomName').value = classData[key].room || '';
+                    document.getElementById('credits').value = classData[key].credits;
+                    document.getElementById('category').value = classData[key].category;
+                    document.getElementById('type').value = classData[key].type;
+                    deleteBtn.style.display = 'block';
+                } else {
+                    document.getElementById('className').value = '';
+                    document.getElementById('roomName').value = '';
+                    document.getElementById('credits').value = '2';
+                    document.getElementById('category').value = '一般教養';
+                    document.getElementById('type').value = '必修';
+                    deleteBtn.style.display = 'none';
+                }
+                
+                overlay.style.display = 'block';
+                classForm.style.display = 'block';
+            }
+            
+            // フォームを閉じる
+            function closeClassForm() {
+                overlay.style.display = 'none';
+                classForm.style.display = 'none';
+            }
+            
+            // 授業を保存
+            saveBtn.addEventListener('click', function() {
+                const day = document.getElementById('day').value;
+                const period = document.getElementById('period').value;
+                const className = document.getElementById('className').value;
+                const roomName = document.getElementById('roomName').value;
+                const credits = document.getElementById('credits').value;
+                const category = document.getElementById('category').value;
+                const type = document.getElementById('type').value;
+                
+                if (!className) {
+                    alert('授業名を入力してください');
+                    return;
+                }
+                
+                const key = `${day}_${period}`;
+                classData[key] = {
+                    name: className,
+                    room: roomName,
+                    credits: parseInt(credits),
+                    category: category,
+                    type: type
+                };
+                
+                updateTimetable();
+                updateStats();
+                closeClassForm();
+                
+                // 自動保存
+                saveToLocalStorage();
+            });
+            
+            // 授業を削除
+            deleteBtn.addEventListener('click', function() {
+                const day = document.getElementById('day').value;
+                const period = document.getElementById('period').value;
+                const key = `${day}_${period}`;
+                
+                delete classData[key];
+                
+                updateTimetable();
+                updateStats();
+                closeClassForm();
+                
+                // 自動保存
+                saveToLocalStorage();
+            });
+            
+            // キャンセル
+            cancelBtn.addEventListener('click', closeClassForm);
+            overlay.addEventListener('click', closeClassForm);
+            
+            // ローカルストレージに保存
+            function saveToLocalStorage() {
+                try {
+                    localStorage.setItem('timetableData', JSON.stringify(classData));
+                } catch (e) {
+                    console.error('ローカルストレージへの保存に失敗しました', e);
+                    alert('データの保存に失敗しました');
+                }
+            }
+            
+            // ローカルストレージから読み込み
+            function loadFromLocalStorage() {
+                try {
+                    const savedData = localStorage.getItem('timetableData');
+                    if (savedData) {
+                        classData = JSON.parse(savedData);
+                        updateTimetable();
+                        updateStats();
+                        showAlert('保存された時間割データを読み込みました', 'success');
+                    }
+                } catch (e) {
+                    console.error('ローカルストレージからの読み込みに失敗しました', e);
+                }
+            }
+            
+            // アラートを表示
+            function showAlert(message, type) {
+                alertEl.textContent = message;
+                alertEl.style.display = 'block';
+                alertEl.className = type === 'warning' ? 'alert alert-warning' : 'alert';
+                
+                setTimeout(function() {
+                    alertEl.style.display = 'none';
+                }, 3000);
+            }
+            
+            // 時間割を更新
+            function updateTimetable() {
+                const cells = document.querySelectorAll('#timetable td');
+                
+                cells.forEach(cell => {
+                    const day = cell.dataset.day;
+                    const period = cell.dataset.period;
+                    const key = `${day}_${period}`;
+                    
+                    // セル内のコンテンツをクリア
+                    cell.innerHTML = '';
+                    
+                    if (classData[key]) {
+                        const cls = classData[key];
+                        const classCell = document.createElement('div');
+                        classCell.className = 'class-cell';
+                        
+                        const nameDiv = document.createElement('div');
+                        nameDiv.className = 'class-name';
+                        nameDiv.textContent = cls.name;
+                        
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'class-info';
+                        
+                        const typeSpan = document.createElement('span');
+                        typeSpan.className = cls.type === '必修' ? 'required' : 'elective';
+                        typeSpan.textContent = cls.type;
+                        
+                        infoDiv.appendChild(document.createTextNode(`${cls.category}/`));
+                        infoDiv.appendChild(typeSpan);
+                        infoDiv.appendChild(document.createTextNode(`/${cls.credits}単位`));
+                        
+                        classCell.appendChild(nameDiv);
+                        classCell.appendChild(infoDiv);
+                        
+                        // 教室情報があれば表示
+                        if (cls.room) {
+                            const roomDiv = document.createElement('div');
+                            roomDiv.className = 'room-info';
+                            roomDiv.textContent = `${cls.room}`;
+                            classCell.appendChild(roomDiv);
+                        }
+                        
+                        cell.appendChild(classCell);
+                    }
+                });
+            }
+            
+            // 統計情報を更新
+            function updateStats() {
+                // 総単位数
+                let totalCredits = 0;
+                let requiredCredits = 0;
+                let electiveCredits = 0;
+                
+                // カテゴリー別のカウント
+                let categoryStats = {};
+                
+                // データを集計
+                Object.values(classData).forEach(cls => {
+                    totalCredits += cls.credits;
+                    
+                    if (cls.type === '必修') {
+                        requiredCredits += cls.credits;
+                    } else {
+                        electiveCredits += cls.credits;
+                    }
+                    
+                    if (!categoryStats[cls.category]) {
+                        categoryStats[cls.category] = {
+                            count: 0,
+                            credits: 0
+                        };
+                    }
+                    
+                    categoryStats[cls.category].count++;
+                    categoryStats[cls.category].credits += cls.credits;
+                });
+                
+                // 表示を更新
+                document.getElementById('total-credits').textContent = `${totalCredits} 単位`;
+                document.getElementById('required-elective').textContent = `必修: ${requiredCredits} / 選択: ${electiveCredits}`;
+                
+                const categoryStatsEl = document.getElementById('category-stats');
+                categoryStatsEl.innerHTML = '';
+                
+                Object.entries(categoryStats).forEach(([category, stats]) => {
+                    const div = document.createElement('div');
+                    div.textContent = `${category}: ${stats.count}科目(${stats.credits}単位)`;
+                    categoryStatsEl.appendChild(div);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
