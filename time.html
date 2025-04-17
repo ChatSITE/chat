@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大学時間割アプリ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 10px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            text-align: center;
+            margin: 10px 0;
+            color: #2c3e50;
+            font-size: 1.5rem;
+        }
+        
+        h2 {
+            font-size: 1.2rem;
+            color: #34495e;
+            margin: 10px 0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .period-selector {
+            margin: 10px 0;
+            width: 100%;
+        }
+        
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background-color: white;
+            max-width: 100%;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            table-layout: fixed;
+        }
+        
+        .timetable th, .timetable td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: center;
+            font-size: 0.8rem;
+            height: 60px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .timetable th {
+            background-color: #34495e;
+            color: white;
+        }
+        
+        .timetable .time-cell {
+            width: 15%;
+            background-color: #ecf0f1;
+            font-weight: bold;
+        }
+        
+        .class-cell {
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            vertical-align: top;
+        }
+        
+        .class-cell:hover {
+            background-color: #e8f4f8;
+        }
+        
+        .class-cell .class-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .class-cell .class-credits {
+            font-size: 0.7rem;
+        }
+        
+        .class-cell .class-type {
+            font-size: 0.7rem;
+            padding: 1px 3px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+        
+        .class-cell .required {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .class-cell .elective {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .class-cell .category {
+            font-size: 0.65rem;
+            color: #7f8c8d;
+            margin-top: 2px;
+        }
+        
+        .stats {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .stats-label {
+            font-weight: bold;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from {transform: translateY(-50px); opacity: 0;}
+            to {transform: translateY(0); opacity: 1;}
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .category-manager {
+            margin-top: 10px;
+        }
+        
+        .category-list {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .category-tag {
+            background-color: #3498db;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .remove-category {
+            margin-left: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .tab-container {
+            display: flex;
+            overflow-x: auto;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+        
+        .tab.active {
+            border-bottom-color: #3498db;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .category-stats {
+            margin-top: 15px;
+        }
+        
+        .category-stats-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .category-stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        
+        .storage-controls {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+        
+        @media (max-width: 480px) {
+            .timetable th, .timetable td {
+                padding: 3px;
+                font-size: 0.7rem;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+            }
+            
+            button {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+            
+            .stats-row {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>大学時間割アプリ</h1>
+    
+    <div class="storage-controls">
+        <button id="save-data">データを保存</button>
+        <button id="load-data">データを読み込み</button>
+        <button id="reset-data">リセット</button>
+    </div>
+    
+    <div class="tab-container">
+        <div class="tab active" data-tab="year1-term1">1年前期</div>
+        <div class="tab" data-tab="year1-term2">1年後期</div>
+        <div class="tab" data-tab="year2-term1">2年前期</div>
+        <div class="tab" data-tab="year2-term2">2年後期</div>
+    </div>
+    
+    <div id="year1-term1" class="tab-content active">
+        <table class="timetable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>月</th>
+                    <th>火</th>
+                    <th>水</th>
+                    <th>木</th>
+                    <th>金</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 時間割が動的に生成されます -->
+            </tbody>
+        </table>
+        <div class="stats year1-term1-stats">
+            <div class="stats-row">
+                <span class="stats-label">前期単位合計:</span>
+                <span class="credits-sum">0</span>
+            </div>
+            <div class="category-stats">
+                <h3>カテゴリ別</h3>
+                <ul class="category-stats-list">
+                    <!-- カテゴリごとの単位数が動的に生成されます -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id="year1-term2" class="tab-content">
+        <table class="timetable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>月</th>
+                    <th>火</th>
+                    <th>水</th>
+                    <th>木</th>
+                    <th>金</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 時間割が動的に生成されます -->
+            </tbody>
+        </table>
+        <div class="stats year1-term2-stats">
+            <div class="stats-row">
+                <span class="stats-label">後期単位合計:</span>
+                <span class="credits-sum">0</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">1年間単位合計:</span>
+                <span class="year1-total">0</span>
+            </div>
+            <div class="category-stats">
+                <h3>カテゴリ別</h3>
+                <ul class="category-stats-list">
+                    <!-- カテゴリごとの単位数が動的に生成されます -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id="year2-term1" class="tab-content">
+        <table class="timetable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>月</th>
+                    <th>火</th>
+                    <th>水</th>
+                    <th>木</th>
+                    <th>金</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 時間割が動的に生成されます -->
+            </tbody>
+        </table>
+        <div class="stats year2-term1-stats">
+            <div class="stats-row">
+                <span class="stats-label">前期単位合計:</span>
+                <span class="credits-sum">0</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">1年半単位合計:</span>
+                <span class="year1-plus-half-total">0</span>
+            </div>
+            <div class="category-stats">
+                <h3>カテゴリ別</h3>
+                <ul class="category-stats-list">
+                    <!-- カテゴリごとの単位数が動的に生成されます -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id="year2-term2" class="tab-content">
+        <table class="timetable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>月</th>
+                    <th>火</th>
+                    <th>水</th>
+                    <th>木</th>
+                    <th>金</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 時間割が動的に生成されます -->
+            </tbody>
+        </table>
+        <div class="stats year2-term2-stats">
+            <div class="stats-row">
+                <span class="stats-label">後期単位合計:</span>
+                <span class="credits-sum">0</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">2年間単位合計:</span>
+                <span class="all-total">0</span>
+            </div>
+            <div class="category-stats">
+                <h3>カテゴリ別</h3>
+                <ul class="category-stats-list">
+                    <!-- カテゴリごとの単位数が動的に生成されます -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id="classModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>授業を追加</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="classForm">
+                <input type="hidden" id="editPeriod" value="">
+                <input type="hidden" id="editDay" value="">
+                <input type="hidden" id="editTime" value="">
+                
+                <div class="form-group">
+                    <label for="className">授業名</label>
+                    <input type="text" id="className" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="classCredits">単位数</label>
+                    <input type="number" id="classCredits" min="1" max="10" value="2" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="classType">種別</label>
+                    <select id="classType" required>
+                        <option value="required">必修</option>
+                        <option value="elective">選択</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="classCategory">カテゴリ</label>
+                    <select id="classCategory">
+                        <option value="一般教養">一般教養</option>
+                        <option value="外国語">外国語</option>
+                        <option value="現代教養">現代教養</option>
+                        <option value="専門科目">専門科目</option>
+                    </select>
+                </div>
+                
+                <div class="category-manager">
+                    <h3>カテゴリ管理</h3>
+                    <div class="form-group">
+                        <label for="newCategory">新しいカテゴリ</label>
+                        <div style="display: flex;">
+                            <input type="text" id="newCategory" placeholder="カテゴリ名">
+                            <button type="button" id="addCategory" style="width: auto; margin-left: 5px;">追加</button>
+                        </div>
+                    </div>
+                    <div class="category-list" id="categoryList">
+                        <!-- カテゴリタグが動的に生成されます -->
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="submit">保存</button>
+                    <button type="button" id="deleteClass" style="background-color: #e74c3c;">削除</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初期データ
+            let categories = ['一般教養', '外国語', '現代教養', '専門科目'];
+            let timetableData = {
+                'year1-term1': {},
+                'year1-term2': {},
+                'year2-term1': {},
+                'year2-term2': {}
+            };
+            
+            let currentPeriod = 'year1-term1';
+            let currentCellInfo = null;
+            
+            // 時限の名前
+            const periodNames = ['1限', '2限', '3限', '4限', '5限'];
+            const dayNames = ['月', '火', '水', '木', '金'];
+            
+            // 全ての時間割テーブルを初期化
+            document.querySelectorAll('.timetable').forEach(table => {
+                const tbody = table.querySelector('tbody');
+                tbody.innerHTML = '';
+                
+                // 各時限の行を生成
+                for (let i = 0; i < 5; i++) {
+                    const row = document.createElement('tr');
+                    
+                    // 時限セル（1限, 2限, ...）
+                    const timeCell = document.createElement('td');
+                    timeCell.textContent = `${i + 1}限`;
+                    timeCell.className = 'time-cell';
+                    row.appendChild(timeCell);
+                    
+                    // 曜日ごとのセル
+                    for (let j = 0; j < 5; j++) {
+                        const cell = document.createElement('td');
+                        cell.className = 'class-cell';
+                        cell.dataset.day = j;
+                        cell.dataset.time = i;
+                        cell.addEventListener('click', openClassModal);
+                        
+                        row.appendChild(cell);
+                    }
+                    
+                    tbody.appendChild(row);
+                }
+            });
+            
+            // タブ切り替え
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // アクティブタブの変更
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 対応するコンテンツの表示
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    currentPeriod = tabId;
+                    renderTimetable();
+                    updateStats();
+                });
+            });
+            
+            // モーダル関連
+            const modal = document.getElementById('classModal');
+            const closeBtn = document.querySelector('.close');
+            
+            closeBtn.addEventListener('click', closeModal);
+            
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    closeModal();
+                }
+            });
+            
+            // 授業情報フォーム送信
+            document.getElementById('classForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const period = document.getElementById('editPeriod').value;
+                const day = parseInt(document.getElementById('editDay').value);
+                const time = parseInt(document.getElementById('editTime').value);
+                const className = document.getElementById('className').value;
+                const credits = parseInt(document.getElementById('classCredits').value);
+                const type = document.getElementById('classType').value;
+                const category = document.getElementById('classCategory').value;
+                
+                // キーの生成 "day-time"
+                const key = `${day}-${time}`;
+                
+                // 授業データの保存
+                if (!timetableData[period]) {
+                    timetableData[period] = {};
+                }
+                
+                timetableData[period][key] = {
+                    name: className,
+                    credits: credits,
+                    type: type,
+                    category: category
+                };
+                
+                // 時間割の再描画
+                renderTimetable();
+                
+                // 統計情報の更新
+                updateStats();
+                
+                // モーダルを閉じる
+                closeModal();
+            });
+            
+            // 授業削除
+            document.getElementById('deleteClass').addEventListener('click', function() {
+                if (currentCellInfo) {
+                    const period = currentCellInfo.period;
+                    const key = `${currentCellInfo.day}-${currentCellInfo.time}`;
+                    
+                    if (timetableData[period] && timetableData[period][key]) {
+                        delete timetableData[period][key];
+                        renderTimetable();
+                        updateStats();
+                    }
+                }
+                
+                closeModal();
+            });
+            
+            // カテゴリ追加
+            document.getElementById('addCategory').addEventListener('click', function() {
+                const newCategory = document.getElementById('newCategory').value.trim();
+                
+                if (newCategory && !categories.includes(newCategory)) {
+                    categories.push(newCategory);
+                    updateCategoryList();
+                    updateCategoryDropdown();
+                    document.getElementById('newCategory').value = '';
+                }
+            });
+            
+            // カテゴリリストの更新
+            function updateCategoryList() {
+                const categoryList = document.getElementById('categoryList');
+                categoryList.innerHTML = '';
+                
+                categories.forEach(category => {
+                    const tag = document.createElement('div');
+                    tag.className = 'category-tag';
+                    tag.innerHTML = `${category} <span class="remove-category" data-category="${category}">×</span>`;
+                    categoryList.appendChild(tag);
+                });
+                
+                // カテゴリ削除イベントの設定
+                document.querySelectorAll('.remove-category').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const categoryToRemove = this.dataset.category;
+                        const index = categories.indexOf(categoryToRemove);
+                        
+                        if (index !== -1) {
+                            categories.splice(index, 1);
+                            updateCategoryList();
+                            updateCategoryDropdown();
+                        }
+                    });
+                });
+            }
+            
+            // カテゴリドロップダウンの更新
+            function updateCategoryDropdown() {
+                const dropdown = document.getElementById('classCategory');
+                dropdown.innerHTML = '';
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    dropdown.appendChild(option);
+                });
+            }
+            
+            // 授業セル選択時のモーダル表示
+            function openClassModal(e) {
+                const cell = e.currentTarget;
+                const day = parseInt(cell.dataset.day);
+                const time = parseInt(cell.dataset.time);
+                
+                document.getElementById('editPeriod').value = currentPeriod;
+                document.getElementById('editDay').value = day;
+                document.getElementById('editTime').value = time;
+                
+                // 現在のセル情報を保存
+                currentCellInfo = {
+                    period: currentPeriod,
+                    day: day,
+                    time: time
+                };
+                
+                // 既存の授業データがあれば表示
+                const key = `${day}-${time}`;
+                if (timetableData[currentPeriod] && timetableData[currentPeriod][key]) {
+                    const classInfo = timetableData[currentPeriod][key];
+                    document.getElementById('className').value = classInfo.name;
+                    document.getElementById('classCredits').value = classInfo.credits;
+                    document.getElementById('classType').value = classInfo.type;
+                    document.getElementById('classCategory').value = classInfo.category;
+                    document.getElementById('deleteClass').style.display = 'block';
+                    document.querySelector('.modal-header h2').textContent = '授業を編集';
+                } else {
+                    // 新規登録の場合
+                    document.getElementById('classForm').reset();
+                    document.getElementById('deleteClass').style.display = 'none';
+                    document.querySelector('.modal-header h2').textContent = '授業を追加';
+                }
+                
+                modal.style.display = 'block';
+            }
+            
+            // モーダルを閉じる
+            function closeModal() {
+                modal.style.display = 'none';
+            }
+            
+            // 時間割表の描画
+            function renderTimetable() {
+                const tabContent = document.getElementById(currentPeriod);
+                const timetable = tabContent.querySelector('.timetable');
+                const rows = timetable.querySelectorAll('tbody tr');
+                
+                // 全てのセルをクリア
+                timetable.querySelectorAll('.class-cell').forEach(cell => {
+                    cell.innerHTML = '';
+                });
+                
+                // 授業データを表示
+                if (timetableData[currentPeriod]) {
+                    for (const key in timetableData[currentPeriod]) {
+                        const [day, time] = key.split('-').map(Number);
+                        const classInfo = timetableData[currentPeriod][key];
+                        
+                        // 対応するセルを取得
+                        const cell = rows[time].children[day + 1];
+                        
+                        // 授業情報を表示
+                        cell.innerHTML = `
+                            <div class="class-name">${classInfo.name}</div>
+                            <div class="class-credits">${classInfo.credits}単位</div>
+                            <div class="class-type ${classInfo.type}">${classInfo.type === 'required' ? '必修' : '選択'}</div>
+                            <div class="category">${classInfo.category}</div>
+                        `;
+                    }
+                }
+            }
+            
+            // 統計情報の更新
+            function updateStats() {
+                // 各学期の単位合計
+                const periodCredits = {
+                    'year1-term1': 0,
+                    'year1-term2': 0,
+                    'year2-term1': 0,
+                    'year2-term2': 0
+                };
+                
+                // カテゴリごとの単位数
+                const categoryCredits = {
+                    'year1-term1': {},
+                    'year1-term2': {},
+                    'year2-term1': {},
+                    'year2-term2': {}
+                };
+                
+                // 各学期の単位を集計
+                for (const period in timetableData) {
+                    if (timetableData[period]) {
+                        for (const key in timetableData[period]) {
+                            const classInfo = timetableData[period][key];
+                            periodCredits[period] += classInfo.credits;
+                            
+                            // カテゴリ別集計
+                            if (!categoryCredits[period][classInfo.category]) {
+                                categoryCredits[period][classInfo.category] = 0;
+                            }
+                            categoryCredits[period][classInfo.category] += classInfo.credits;
+                        }
+                    }
+                }
+                
+                // 各期間の単位合計表示
+                for (const period in periodCredits) {
+                    const statsContainer = document.querySelector(`.${period}-stats`);
+                    statsContainer.querySelector('.credits-sum').textContent = periodCredits[period];
+                }
+                
+                // 1年間合計
+                const year1Total = periodCredits['year1-term1'] + periodCredits['year1-term2'];
+                document.querySelector('.year1-total').textContent = year1Total;
+                
+                // 1年半合計
+                const year1PlusHalfTotal = year1Total + periodCredits['year2-term1'];
+                document.querySelector('.year1-plus-half-total').textContent = year1PlusHalfTotal;
+                
+                // 2年間合計
+                const allTotal = year1PlusHalfTotal + periodCredits['year2-term2'];
+                document.querySelector('.all-total').textContent = allTotal;
+                
+                // カテゴリ別統計の表示
+                for (const period in categoryCredits) {
+                    const categoryStatsList = document.querySelector(`.${period}-stats .category-stats-list`);
+                    categoryStatsList.innerHTML = '';
+                    
+                    for (const category in categoryCredits[period]) {
+                        const li = document.createElement('li');
+                        li.className = 'category-stats-item';
+                        li.innerHTML = `
+                            <span>${category}</span>
+                            <span>${categoryCredits[period][category]}単位</span>
+                        `;
+                        categoryStatsList.appendChild(li);
+                    }
+                }
+            }
+            
+            // データの保存
+            document.getElementById('save-data').addEventListener('click', function() {
+                const saveData = {
+                    timetableData: timetableData,
+                    categories: categories
+                };
+                
+                localStorage.setItem('timetableApp', JSON.stringify(saveData));
+                alert('データを保存しました');
+            });
+            
+            // データの読み込み
+            document.getElementById('load-data').addEventListener('click', function() {
+                const savedData = localStorage.getItem('timetableApp');
+                
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    timetableData = data.timetableData;
+                    categories = data.categories;
+                    
+                    updateCategoryList();
+                    updateCategoryDropdown();
+                    renderTimetable();
+                    updateStats();
+                    alert('データを読み込みました');
+                } else {
+                    alert('保存されたデータがありません');
+                }
+            });
+            
+            // データのリセット
+            document.getElementById('reset-data').addEventListener('click', function() {
+                if (confirm('全てのデータをリセットしますか？')) {
+                    timetableData = {
+                        'year1-term1': {},
+                        'year1-term2': {},
+                        'year2-term1': {},
+                        'year2-term2': {}
+                    };
+                    categories = ['一般教養', '外国語', '現代教養', '専門科目'];
+                    
+                    updateCategoryList();
+                    updateCategoryDropdown();
+                    renderTimetable();
+                    updateStats();
+                }
+            });
+            
+            // 初期化
+            updateCategoryList();
+            updateCategoryDropdown();
+            renderTimetable();
+            updateStats();
+            
+            // ローカルストレージにデータがあれば読み込む
+            const savedData = localStorage.getItem('timetableApp');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                timetableData = data.timetableData;
+                categories = data.categories;
+                
+                updateCategoryList();
+                updateCategoryDropdown();
+                renderTimetable();
+                updateStats();
+            }
+        });
+    </script>
+</body>
+</html>
