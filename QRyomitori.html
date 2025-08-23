@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>QRコード 静止フレームスキャンデモ</title>
+  <title>QRコード 静止フレーム＆ファイルスキャン</title>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; padding: 20px; }
@@ -15,9 +15,9 @@
 </head>
 <body>
 
-<h1>QRコード 静止フレームスキャン</h1>
+<h1>QRコード 静止フレーム＆ファイルスキャン</h1>
 
-<p id="status">カメラ起動してください</p>
+<p id="status">カメラ起動またはファイルを選択してください</p>
 
 <video id="videoPreview" autoplay playsinline></video>
 <canvas id="canvas"></canvas>
@@ -25,6 +25,7 @@
 <div>
   <button id="startBtn">カメラ起動</button>
   <button id="scanBtn" disabled>QRを撮影して解析</button>
+  <input type="file" id="fileInput" accept="image/*">
   <button id="finishBtn" disabled>画像復元</button>
 </div>
 
@@ -62,6 +63,26 @@ document.getElementById("scanBtn").addEventListener("click", () => {
   canvas.height = video.videoHeight;
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+  scanQRCodeFromCanvas();
+});
+
+// ファイルからスキャン
+document.getElementById("fileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    context.drawImage(img, 0, 0);
+    scanQRCodeFromCanvas();
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+// QR解析関数
+function scanQRCodeFromCanvas() {
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
   const qr = jsQR(imageData.data, imageData.width, imageData.height);
 
@@ -81,9 +102,9 @@ document.getElementById("scanBtn").addEventListener("click", () => {
       console.error(e);
     }
   } else {
-    statusEl.innerText = "QRが認識できませんでした。枠に合わせてもう一度押してください。";
+    statusEl.innerText = "QRが認識できませんでした。もう一度試してください。";
   }
-});
+}
 
 // 画像復元
 document.getElementById("finishBtn").addEventListener("click", () => {
