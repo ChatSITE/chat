@@ -2,11 +2,12 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>QRコード 1枚ずつスキャンデモ</title>
+  <title>QRコード 静止フレームスキャンデモ</title>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; padding: 20px; }
-    video { border: 1px solid #ccc; margin-bottom: 10px; }
+    #videoPreview { border: 2px dashed #888; width: 320px; height: 240px; object-fit: contain; margin-bottom: 10px; }
+    canvas { display: none; }
     #result { margin-top: 20px; max-width: 100%; }
     #status { margin: 10px; font-weight: bold; }
     button { margin: 5px; padding: 10px 20px; font-size: 16px; }
@@ -14,23 +15,23 @@
 </head>
 <body>
 
-<h1>QRコード 1枚ずつスキャンデモ</h1>
+<h1>QRコード 静止フレームスキャン</h1>
 
-<p id="status">まだスキャンしていません</p>
+<p id="status">カメラ起動してください</p>
 
-<video id="video" width="320" height="240" autoplay></video>
-<canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+<video id="videoPreview" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
 
 <div>
   <button id="startBtn">カメラ起動</button>
-  <button id="scanBtn" disabled>1枚スキャン</button>
+  <button id="scanBtn" disabled>QRを撮影して解析</button>
   <button id="finishBtn" disabled>画像復元</button>
 </div>
 
 <img id="result" alt="復元画像">
 
 <script>
-const video = document.getElementById("video");
+const video = document.getElementById("videoPreview");
 const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
 const statusEl = document.getElementById("status");
@@ -38,24 +39,24 @@ const resultEl = document.getElementById("result");
 
 let chunks = {};
 let total = null;
-let scanningActive = false;
+let cameraStarted = false;
 
 // カメラ起動
 document.getElementById("startBtn").addEventListener("click", async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     video.srcObject = stream;
-    scanningActive = true;
-    statusEl.innerText = "カメラ起動完了。1枚ずつスキャンしてください。";
+    cameraStarted = true;
+    statusEl.innerText = "カメラ起動完了。QRを枠内に合わせて「QRを撮影して解析」を押してください。";
     document.getElementById("scanBtn").disabled = false;
   } catch (e) {
     alert("カメラが使えません: " + e.message);
   }
 });
 
-// 1枚スキャン
+// 1枚スキャン（静止フレーム取得）
 document.getElementById("scanBtn").addEventListener("click", () => {
-  if (!scanningActive) return;
+  if (!cameraStarted) return;
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -80,7 +81,7 @@ document.getElementById("scanBtn").addEventListener("click", () => {
       console.error(e);
     }
   } else {
-    statusEl.innerText = "QRが認識できませんでした。もう一度試してください。";
+    statusEl.innerText = "QRが認識できませんでした。枠に合わせてもう一度押してください。";
   }
 });
 
