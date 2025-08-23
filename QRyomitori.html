@@ -1,62 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>QR Scan Demo</title>
+  <title>QRコード 1枚ずつスキャンデモ</title>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    video { border: 1px solid #ccc; margin-bottom: 10px; }
+    #result { margin-top: 20px; max-width: 100%; }
+    #status { margin: 10px; font-weight: bold; }
+    button { margin: 5px; padding: 10px 20px; font-size: 16px; }
+  </style>
 </head>
 <body>
-  <h2>QRコード読み取り</h2>
-  <video id="video" width="320" height="240" autoplay></video>
-  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
-  <p id="status">Scanning...</p>
-  <img id="result" />
 
-  <script>
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const context = canvas.getContext("2d");
+<h1>QRコード 1枚ずつスキャンデモ</h1>
 
-    let chunks = {};   // 受信したデータを保持
-    let total = null;
+<p id="status">まだスキャンしていません</p>
 
-    // カメラ起動
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => video.srcObject = stream);
+<video id="video" width="320" height="240" autoplay></video>
+<canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
 
-    function tick() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+<div>
+  <button id="startBtn">カメラ起動</button>
+  <button id="scanBtn" disabled>1枚スキャン</button>
+  <button id="finishBtn" disabled>画像復元</button>
+</div>
 
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const qr = jsQR(imageData.data, imageData.width, imageData.height);
+<img id="result" alt="復元画像">
 
-        if (qr) {
-          try {
-            let payload = JSON.parse(qr.data);
-            chunks[payload.index] = payload.data;
-            total = payload.total;
-            document.getElementById("status").innerText =
-              `Got chunk ${payload.index+1}/${total}`;
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const context = canvas.getContext("2d");
+const statusEl = document.getElementById("status");
+const resultEl = document.getElementById("result");
 
-            // 全部揃ったら復元
-            if (Object.keys(chunks).length === total) {
-              let merged = [].concat(...Object.values(chunks));
-              let u8 = new Uint8Array(merged);
-              let blob = new Blob([u8], {type:"image/jpeg"});
-              document.getElementById("result").src = URL.createObjectURL(blob);
-              document.getElementById("status").innerText = "Complete!";
-            }
-          } catch (e) {
-            console.error("QR parse error:", e);
-          }
-        }
+let chunks = {};
+let total = null;
+let scanningActive = false;
+
+// カメラ起動
+document.getElementById("startBtn").addEventListener("click", async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    video.srcObject = stream;
+    scanningActive = true;
+    statusEl.innerText = "カメラ起動完了。1枚ずつスキャンしてください。";
+    document.getElementById("scanBtn").disabled = false;
+  } catch (e) {
+    alert("カメラが使えません: " + e.message);
+  }
+});
+
+// 1枚スキャン
+document.getElementById("scanBtn").addEventListener("click", () => {
+  if (!scanningActive) return;
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const qr = jsQR(imageData.data, imageData.width, imageData.height);
+
+  if (qr) {
+    try {
+      const payload = JSON.parse(qr.data);
+      if (!(payload.index in chunks)) {
+        chunks[payload.index] = payload.data;
+        total = payload.total;
+        statusEl.innerText = `スキャン中: ${Object.keys(chunks).length}/${total} 個`;
+        document.getElementById("finishBtn").disabled = false;
+      } else {
+        statusEl.innerText = `すでにスキャン済みのQRです (${payload.index+1})`;
       }
-      requestAnimationFrame(tick);
+    } catch (e) {
+      statusEl.innerText = "QRデータ解析エラー";
+      console.error(e);
     }
-    tick();
-  </script>
+  } else {
+    statusEl.innerText = "QRが認識できませんでした。もう一度試してください。";
+  }
+});
+
+// 画像復元
+document.getElementById("finishBtn").addEventListener("click", () => {
+  if (!total || Object.keys(chunks).length !== total) {
+    alert(`まだスキャンが完了していません (${Object.keys(chunks).length}/${total})`);
+    return;
+  }
+
+  let merged = [].concat(...Object.values(chunks));
+  let u8 = new Uint8Array(merged);
+  let blob = new Blob([u8], {type:"image/jpeg"});
+  resultEl.src = URL.createObjectURL(blob);
+  statusEl.innerText = "スキャン完了！画像復元成功";
+});
+</script>
+
 </body>
 </html>
