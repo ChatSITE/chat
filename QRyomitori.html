@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Scan Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+</head>
+<body>
+  <h2>QRコード読み取り</h2>
+  <video id="video" width="320" height="240" autoplay></video>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  <p id="status">Scanning...</p>
+  <img id="result" />
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+
+    let chunks = {};   // 受信したデータを保持
+    let total = null;
+
+    // カメラ起動
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => video.srcObject = stream);
+
+    function tick() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const qr = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (qr) {
+          try {
+            let payload = JSON.parse(qr.data);
+            chunks[payload.index] = payload.data;
+            total = payload.total;
+            document.getElementById("status").innerText =
+              `Got chunk ${payload.index+1}/${total}`;
+
+            // 全部揃ったら復元
+            if (Object.keys(chunks).length === total) {
+              let merged = [].concat(...Object.values(chunks));
+              let u8 = new Uint8Array(merged);
+              let blob = new Blob([u8], {type:"image/jpeg"});
+              document.getElementById("result").src = URL.createObjectURL(blob);
+              document.getElementById("status").innerText = "Complete!";
+            }
+          } catch (e) {
+            console.error("QR parse error:", e);
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  </script>
+</body>
+</html>
