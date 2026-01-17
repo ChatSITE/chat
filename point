@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ポイントカードシステム - 管理者ページ</title>
+  <!-- 共通のスタイルシート -->
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: 18px;
+}
+
+:root {
+  --primary-color: #007bff;
+  --secondary-color: #6c757d;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --background-color: #f0f2f5;
+  --text-color: #000000;
+}
+
+.dark-mode {
+  --background-color: #181a1b;
+  --text-color: #ffffff;
+}
+
+.navbar {
+  background-color: var(--primary-color);
+  padding: 10px;
+  color: #ffffff;
+}
+
+.navbar-brand {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.logout-btn {
+  background-color: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.section {
+  margin-top: 20px;
+}
+
+.card {
+  background-color: var(--background-color);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card h2, .card h3 {
+  margin-top: 0;
+  font-size: 26px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.form-group input, .form-group textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  text-align: center;
+  border: none;
+  border-radius: 4px;
+}
+
+.btn:focus {
+  outline: none;
+}
+
+.primary-btn {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}
+
+.success-btn {
+  background-color: var(--success-color);
+  color: #ffffff;
+}
+
+.danger-btn {
+  background-color: var(--danger-color);
+  color: #ffffff;
+}
+
+.points {
+  font-size: 56px;
+  color: var(--success-color);
+  margin: 20px 0;
+}
+
+.error-message {
+  color: var(--danger-color);
+}
+
+.success-message {
+  color: var(--success-color);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+table th, table td {
+  border: 1px solid #cccccc;
+  padding: 12px;
+  text-align: center;
+  font-size: 16px;
+}
+
+table th {
+  background-color: #f5f5f5;
+}
+
+.switch {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  position: relative;
+  width: 50px;
+  height: 24px;
+  background-color: #ccc;
+  border-radius: 50px;
+  cursor: pointer;
+}
+
+.slider::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 1px;
+  bottom: 1px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+input:checked + .slider::before {
+  transform: translateX(26px);
+}
+
+/* スマホ向け調整 */
+@media screen and (max-width: 600px) {
+  .navbar-brand {
+    font-size: 20px;
+  }
+
+  .logout-btn {
+    font-size: 16px;
+  }
+
+  .card h2, .card h3 {
+    font-size: 22px;
+  }
+
+  .points {
+    font-size: 48px;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  table, table thead, table tbody, table th, table td, table tr {
+    display: block;
+  }
+
+  table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  table tr {
+    margin-bottom: 15px;
+  }
+
+  table td {
+    border: none;
+    position: relative;
+    padding-left: 50%;
+    text-align: left;
+  }
+
+  table td::before {
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    font-weight: bold;
+    content: attr(data-label);
+    font-size: 16px;
+  }
+}
+</style>
+  <!-- html5-qrcodeライブラリ -->
+  <script src="https://unpkg.com/html5-qrcode@2.1.1/html5-qrcode.min.js"></script>
+  <!-- CryptoJSライブラリ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+  <!-- ナビゲーションバー -->
+  <nav class="navbar">
+    <div class="container">
+      <span class="navbar-brand">ポイントカードシステム - 管理者ページ</span>
+      <div class="switch">
+        <label>
+          <input type="checkbox" id="themeSwitch">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <button id="logoutBtn" class="btn logout-btn">ログアウト</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- 管理者セクション -->
+    <div id="admin-section" class="section">
+      <!-- QRコードスキャン -->
+      <div class="card">
+        <h2>QRコードスキャン</h2>
+        <div id="reader" style="width: 300px; margin: auto;"></div>
+        <div id="scanResult"></div>
+      </div>
+
+      <!-- スキャンしたユーザー情報の表示・管理 -->
+      <div class="card" id="userInfoCard" style="display: none;">
+        <h3>ユーザー情報</h3>
+        <p>電話番号: <span id="userPhone"></span></p>
+        <p>名前: <span id="userName"></span></p>
+        <p>現在のポイント: <span id="userPoints"></span></p>
+        <div class="form-group">
+          <label for="updatePointsInput">新しいポイント数</label>
+          <input type="number" id="updatePointsInput">
+        </div>
+        <button onclick="updateUserPoints()" class="btn primary-btn">ポイントを更新</button>
+      </div>
+
+      <!-- ユーザー管理 -->
+      <div class="card">
+        <h2>ユーザー管理</h2>
+        <div class="form-group">
+          <input type="text" id="searchInput" placeholder="電話番号または名前で検索">
+          <button onclick="searchUser()" class="btn primary-btn">検索</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>電話番号</th>
+              <th>名前</th>
+              <th>ポイント</th>
+              <th>新しいポイント</th>
+              <th>更新</th>
+            </tr>
+          </thead>
+          <tbody id="userTable">
+            <!-- ユーザーデータをここに挿入 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 新規ユーザー追加 -->
+      <div class="card">
+        <h2>新規ユーザー追加</h2>
+        <div class="form-group">
+          <label for="newPhone">電話番号</label>
+          <input type="text" id="newPhone" placeholder="例：090-1234-5678">
+        </div>
+        <div class="form-group">
+          <label for="newPassword">パスワード</label>
+          <input type="password" id="newPassword" placeholder="例：19900101">
+        </div>
+        <div class="form-group">
+          <label for="newName">名前</label>
+          <input type="text" id="newName" placeholder="例：山田太郎">
+        </div>
+        <button onclick="addUser()" class="btn primary-btn">ユーザー追加</button>
+        <p id="addUserMessage" class="success-message"></p>
+      </div>
+
+      <!-- お知らせ送信 -->
+      <div class="card">
+        <h2>お知らせ送信</h2>
+        <div class="form-group">
+          <textarea id="announcementMessage" placeholder="お知らせ内容を入力"></textarea>
+        </div>
+        <button onclick="sendAnnouncement()" class="btn primary-btn">送信</button>
+        <p id="announcementMessageStatus" class="success-message"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScriptコード -->
+  <script>
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbzAPPCJJHuOw1jCQ5fCORG7cQ--5qUvxyXI0Vr3D_yBa4A9Brb4FwKBPgk_9_oM7Ha8/exec'; // あなたのGASウェブアプリのURL
+    var SHARED_SECRET_KEY = '10gmtS5cI_817AGJYV56pMKLXyO_uVKqlrukfggjFgYU'; // user.html と同じ共有鍵
+    var scannedUserPhoneNumber = null;
+
+    // テーマの切り替え
+    var themeSwitch = document.getElementById('themeSwitch');
+    themeSwitch.addEventListener('change', function() {
+      document.body.classList.toggle('dark-mode');
+    });
+
+    // ログアウト処理
+    function logout() {
+      window.location.href = 'user.html';
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // QRコードのスキャン処理
+    function onScanSuccess(decodedText, decodedResult) {
+      // スキャン成功時の処理
+      // 復号化
+      var decryptedData = CryptoJS.AES.decrypt(decodedText, SHARED_SECRET_KEY).toString(CryptoJS.enc.Utf8);
+      scannedUserPhoneNumber = decryptedData;
+
+      // ユーザー情報を取得
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=getUserByQRCode&encryptedData=' + encodeURIComponent(decodedText)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('userPhone').textContent = data.user.phoneNumber;
+          document.getElementById('userName').textContent = data.user.name;
+          document.getElementById('userPoints').textContent = data.user.points;
+          document.getElementById('updatePointsInput').value = data.user.points;
+          document.getElementById('userInfoCard').style.display = 'block';
+        } else {
+          alert('ユーザーが見つかりません');
+        }
+      });
+    }
+
+    function onScanFailure(error) {
+      // スキャン失敗時の処理（必要に応じて）
+      // console.warn(`QRコードの読み取りに失敗しました: ${error}`);
+    }
+
+    // QRコードリーダーの初期化
+    var html5QrCode = new Html5Qrcode("reader");
+    var config = { fps: 10, qrbox: 250 };
+
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+
+    // ユーザーポイントの更新
+    function updateUserPoints() {
+      var newPoints = document.getElementById('updatePointsInput').value;
+      var description = '管理者によるポイント更新';
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=updatePoints&targetPhone=' + encodeURIComponent(scannedUserPhoneNumber) + '&points=' + encodeURIComponent(newPoints) + '&description=' + encodeURIComponent(description)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          alert('ポイントを更新しました');
+          document.getElementById('userInfoCard').style.display = 'none';
+          scannedUserPhoneNumber = null;
+        } else {
+          alert('ポイントの更新に失敗しました');
+        }
+      });
+    }
+
+    // 管理者データ取得
+    function fetchUserData() {
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=getAllUsers'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          populateUserTable(data.users);
+        } else {
+          alert('データの取得に失敗しました');
+        }
+      });
+    }
+
+    // ユーザーテーブルを表示
+    function populateUserTable(users) {
+      var tbody = document.getElementById('userTable');
+      tbody.innerHTML = '';
+
+      users.forEach(function(user) {
+        var tr = document.createElement('tr');
+
+        var tdPhone = document.createElement('td');
+        tdPhone.textContent = user.phoneNumber;
+        tr.appendChild(tdPhone);
+
+        var tdName = document.createElement('td');
+        tdName.textContent = user.name;
+        tr.appendChild(tdName);
+
+        var tdPoints = document.createElement('td');
+        tdPoints.textContent = user.points;
+        tr.appendChild(tdPoints);
+
+        var tdNewPoints = document.createElement('td');
+        var inputPoints = document.createElement('input');
+        inputPoints.type = 'number';
+        inputPoints.value = user.points;
+        inputPoints.style.width = '100%';
+        tdNewPoints.appendChild(inputPoints);
+        tr.appendChild(tdNewPoints);
+
+        var tdUpdate = document.createElement('td');
+        var btnUpdate = document.createElement('button');
+        btnUpdate.textContent = '更新';
+        btnUpdate.className = 'btn primary-btn';
+        btnUpdate.onclick = function() {
+          updatePoints(user.phoneNumber, inputPoints.value);
+        };
+        tdUpdate.appendChild(btnUpdate);
+        tr.appendChild(tdUpdate);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ポイントを更新
+    function updatePoints(targetPhone, points) {
+      var description = '管理者によるポイント更新';
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=updatePoints&targetPhone=' + encodeURIComponent(targetPhone) + '&points=' + encodeURIComponent(points) + '&description=' + encodeURIComponent(description)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          alert('ポイントを更新しました');
+          fetchUserData();
+        } else {
+          alert('エラーが発生しました');
+        }
+      });
+    }
+
+    // 新規ユーザー追加
+    function addUser() {
+      var phoneNumber = document.getElementById('newPhone').value;
+      var password = document.getElementById('newPassword').value;
+      var name = document.getElementById('newName').value;
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=addUser&phoneNumber=' + encodeURIComponent(phoneNumber) + '&password=' + encodeURIComponent(password) + '&name=' + encodeURIComponent(name)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('addUserMessage').textContent = 'ユーザーを追加しました';
+          fetchUserData();
+        } else {
+          document.getElementById('addUserMessage').textContent = 'ユーザーの追加に失敗しました';
+        }
+      });
+    }
+
+    // お知らせ送信
+    function sendAnnouncement() {
+      var message = document.getElementById('announcementMessage').value;
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=addAnnouncement&message=' + encodeURIComponent(message)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('announcementMessageStatus').textContent = 'お知らせを送信しました';
+          document.getElementById('announcementMessage').value = '';
+        } else {
+          document.getElementById('announcementMessageStatus').textContent = 'お知らせの送信に失敗しました';
+        }
+      });
+    }
+
+    // ユーザー検索
+    function searchUser() {
+      var keyword = document.getElementById('searchInput').value.toLowerCase();
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=getAllUsers'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          var filteredUsers = data.users.filter(function(user) {
+            return user.phoneNumber.toLowerCase().includes(keyword) || user.name.toLowerCase().includes(keyword);
+          });
+          populateUserTable(filteredUsers);
+        }
+      });
+    }
+
+    // ページ読み込み時にデータを取得
+    window.onload = function() {
+      fetchUserData();
+    }
+  </script>
+</body>
+</html>
